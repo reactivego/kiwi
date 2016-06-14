@@ -2,6 +2,7 @@ package kiwi
 
 import (
 	"kiwi/strength"
+	"runtime"
 	"testing"
 )
 
@@ -9,9 +10,10 @@ const EPSILON = 1.0e-8
 
 // assertEqualsFloat64() calls testing.T.Error() with the given message if
 // the given float64s are not equal.
-func assertEqualsFloat64(t *testing.T, a, b float64, message string, id int) {
-	if !NearZero(a - b) {
-		t.Errorf("#%d: %s %g != %g", id, message, a, b)
+func assertEqualsFloat64(t *testing.T, got, expect float64, message string) {
+	_, _, line, _ := runtime.Caller(1)
+	if !NearZero(got - expect) {
+		t.Errorf("line %d: %s expected %g, got %g", line, message, expect, got)
 	}
 }
 
@@ -25,7 +27,7 @@ func TestSimpleNew(t *testing.T) {
 
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 18, "x =", 1)
+	assertEqualsFloat64(t, x.GetValue(), 18, "x =")
 }
 
 func TestSimple0(t *testing.T) {
@@ -41,8 +43,8 @@ func TestSimple0(t *testing.T) {
 
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, y.GetValue(), 12, "y =", 1)
-	assertEqualsFloat64(t, x.GetValue(), 20, "x =", 2)
+	assertEqualsFloat64(t, y.GetValue(), 12, "y =")
+	assertEqualsFloat64(t, x.GetValue(), 20, "x =")
 }
 
 func TestSimple1(t *testing.T) {
@@ -53,7 +55,7 @@ func TestSimple1(t *testing.T) {
 
 	solver.AddConstraint(x.Equals(y))
 	solver.UpdateVariables()
-	assertEqualsFloat64(t, x.GetValue(), y.GetValue(), "x = y =", 1)
+	assertEqualsFloat64(t, x.GetValue(), y.GetValue(), "x = y =")
 }
 
 func TestSimple2(t *testing.T) {
@@ -68,8 +70,8 @@ func TestSimple2(t *testing.T) {
 	solver.AddConstraint(x.Multiply(10).Equals(y.Multiply(5)))
 
 	solver.UpdateVariables()
-	assertEqualsFloat64(t, x.GetValue(), 27, "x =", 1)
-	assertEqualsFloat64(t, y.GetValue(), 54, "y =", 2)
+	assertEqualsFloat64(t, x.GetValue(), 27, "x =")
+	assertEqualsFloat64(t, y.GetValue(), 54, "y =")
 }
 
 func TestCasso0(t *testing.T) {
@@ -90,7 +92,7 @@ func TestCasso0(t *testing.T) {
 
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 5, "x =", 1)
+	assertEqualsFloat64(t, x.GetValue(), 5, "x =")
 
 }
 
@@ -123,10 +125,10 @@ func TestCasso1(t *testing.T) {
 	solver.UpdateVariables()
 
 	if NearZero(x.GetValue() - 10.0) {
-		assertEqualsFloat64(t, x.GetValue(), 10, "x =", 1)
-		assertEqualsFloat64(t, y.GetValue(), 13, "y =", 2)
+		assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+		assertEqualsFloat64(t, y.GetValue(), 13, "y =")
 	} else {
-		assertEqualsFloat64(t, x.GetValue(), 7, "x =", 3)
-		assertEqualsFloat64(t, y.GetValue(), 10, "y =", 4)
+		assertEqualsFloat64(t, x.GetValue(), 7, "x =")
+		assertEqualsFloat64(t, y.GetValue(), 10, "y =")
 	}
 }
