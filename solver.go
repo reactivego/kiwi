@@ -138,8 +138,8 @@ func (s *solver) AddConstraint(constraint Constraint) error {
 	subject := row.ChooseSubject(tag)
 
 	if subject.IsInvalid() && row.AllDummies() {
-		if NearZero(row.GetConstant()) {
-			return &UnsatisfiableConstraintException{constraint}
+		if !NearZero(row.GetConstant()) {
+			return UnsatisfiableConstraintException{constraint}
 		} else {
 			subject = tag.marker
 		}
