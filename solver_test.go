@@ -132,3 +132,22 @@ func TestCasso1(t *testing.T) {
 		assertEqualsFloat64(t, y.GetValue(), 10, "y =")
 	}
 }
+
+func TestInconsistent1(t *testing.T) {
+	x := NewVariable("x")
+	solver := NewSolver()
+
+	err := solver.AddConstraint(x.EqualsConstant(10.0))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(x.EqualsConstant(5.0))
+	if err == nil {
+		t.Errorf("expected err != nil, got err == nil")
+	}
+	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
+		t.Errorf("expected typematch == true got false")
+	}
+
+	solver.UpdateVariables()
+}
