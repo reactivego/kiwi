@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-const EPSILON = 1.0e-8
-
 // assertEqualsFloat64() calls testing.T.Error() with the given message if
 // the given float64s are not equal.
 func assertEqualsFloat64(t *testing.T, got, expect float64, message string) {
@@ -147,6 +145,63 @@ func TestInconsistent1(t *testing.T) {
 	}
 	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
 		t.Errorf("expected typematch == true got false")
+	}
+
+	solver.UpdateVariables()
+}
+
+func TestInconsistent2(t *testing.T) {
+	x := NewVariable("x")
+	solver := NewSolver()
+
+	err := solver.AddConstraint(x.GreaterThanOrEqualToConstant(10.0))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(x.LessThanOrEqualToConstant(5.0))
+	if err == nil {
+		t.Errorf("expected err != nil, got err == nil")
+	}
+	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
+		t.Errorf("expected UnsatisfiableConstraintException got something else")
+	}
+
+	solver.UpdateVariables()
+}
+
+func TestInconsistent3(t *testing.T) {
+	w := NewVariable("w")
+	x := NewVariable("x")
+	y := NewVariable("y")
+	z := NewVariable("z")
+	solver := NewSolver()
+
+	err := solver.AddConstraint(w.GreaterThanOrEqualToConstant(10.0))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(x.GreaterThanOrEqualTo(w))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(y.GreaterThanOrEqualTo(x))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(z.GreaterThanOrEqualTo(y))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(z.GreaterThanOrEqualToConstant(8.0))
+	if err != nil {
+		t.Errorf("expected err == nil, got err != nil")
+	}
+	err = solver.AddConstraint(z.LessThanOrEqualToConstant(4.0))
+	if err == nil {
+		t.Errorf("expected err != nil, got err == nil")
+	}
+	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
+		t.Errorf("expected UnsatisfiableConstraintException got something else")
 	}
 
 	solver.UpdateVariables()

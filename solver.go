@@ -11,7 +11,7 @@ type Solver interface {
 
 	/* Add a constraint to the solver.
 
-	Throws
+	Returns
 	------
 	DuplicateConstraint
 		The given constraint has already been added to the solver.
@@ -24,7 +24,7 @@ type Solver interface {
 
 	/* Remove a constraint from the solver.
 
-	Throws
+	Returns
 	------
 	UnknownConstraint
 		The given constraint has not been added to the solver.
@@ -42,7 +42,7 @@ type Solver interface {
 	This method should be called before the `suggestValue` method is
 	used to supply a suggested value for the given edit variable.
 
-	Throws
+	Returns
 	------
 	DuplicateEditVariable
 		The given edit variable has already been added to the solver.
@@ -55,7 +55,7 @@ type Solver interface {
 
 	/* Remove an edit variable from the solver.
 
-	Throws
+	Returns
 	------
 	UnknownEditVariable
 		The given edit variable has not been added to the solver.
@@ -75,7 +75,7 @@ type Solver interface {
 	all suggestions have been made, the `solve` method can be used to
 	update the values of all variables.
 
-	Throws
+	Returns
 	------
 	UnknownEditVariable
 		The given edit variable has not been added to the solver.
@@ -130,7 +130,7 @@ type tag struct {
 
 func (s *solver) AddConstraint(constraint Constraint) error {
 
-	if _, ok := s.cns[constraint]; ok {
+	if _, present := s.cns[constraint]; present {
 		return DuplicateConstraintException{}
 	}
 
@@ -367,6 +367,41 @@ func (s *solver) optimize(objective Row) error {
 		s.substitute(enterSym, exitRow)
 		s.rows[enterSym] = exitRow
 	}
+}
+
+/**
+ * Optimize the system using the dual of the simplex method.
+ *
+ * The current state of the system should be such that the objective
+ * function is optimal, but not feasible. This method will perform
+ * an iteration of the dual simplex method to make the solution both
+ * optimal and feasible.
+ *
+ * @returns InternalSolverError The system cannot be dual optimized.
+ */
+func (s *solver) dualOptimize() error {
+	for len(s.infeasibleRows) > 0 {
+
+		last := len(s.infeasibleRows) - 1
+		leaving := s.infeasibleRows[last]
+		s.infeasibleRows[last] = nil
+		s.infeasibleRows = s.infeasibleRows[:last]
+		row := s.rows[leaving]
+
+		if row != nil && row.GetConstant() < 0.0 {
+			entering := s.objective.GetDualEnteringSymbol(row)
+			if entering.IsInvalid() {
+				return InternalSolverError{"internal solver error"}
+			}
+			delete(s.rows, leaving)
+
+			row.SolveForPair(leaving, entering)
+			s.substitute(entering, row)
+			s.rows[entering] = row
+		}
+
+	}
+	return nil
 }
 
 /**

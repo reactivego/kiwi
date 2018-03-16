@@ -21,6 +21,10 @@ type Variable interface {
 	LessThanOrEqualTo(variable Variable) Constraint
 	LessThanOrEqualToTerm(term Term) Constraint
 	LessThanOrEqualToExpression(expression Expression) Constraint
+	GreaterThanOrEqualToConstant(constant float64) Constraint
+	GreaterThanOrEqualTo(variable Variable) Constraint
+	GreaterThanOrEqualToTerm(term Term) Constraint
+	GreaterThanOrEqualToExpression(expression Expression) Constraint
 }
 
 func NewVariable(name string) Variable {
@@ -94,4 +98,20 @@ func (v *variable) LessThanOrEqualToTerm(term Term) Constraint {
 
 func (v *variable) LessThanOrEqualToExpression(expression Expression) Constraint {
 	return NewTermFromVariable(v).LessThanOrEqualToExpression(expression)
+}
+
+func (v *variable) GreaterThanOrEqualToConstant(constant float64) Constraint {
+	return NewTermFromVariable(v).GreaterThanOrEqualToConstant(constant)
+}
+
+func (v *variable) GreaterThanOrEqualTo(variable Variable) Constraint {
+	return NewTermFromVariable(v).GreaterThanOrEqualToVariable(variable)
+}
+
+func (v *variable) GreaterThanOrEqualToTerm(term Term) Constraint {
+	return NewTermFromVariable(v).GreaterThanOrEqualTo(term)
+}
+
+func (v *variable) GreaterThanOrEqualToExpression(expression Expression) Constraint {
+	return NewTermFromVariable(v).GreaterThanOrEqualToExpression(expression)
 }

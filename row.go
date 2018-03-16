@@ -1,5 +1,7 @@
 package kiwi
 
+import "math"
+
 type Row interface {
 	GetConstant() float64
 	GetCells() map[Symbol]float64
@@ -19,6 +21,7 @@ type Row interface {
 	AnyPivotableSymbol() Symbol
 
 	GetEnteringSymbol() Symbol
+	GetDualEnteringSymbol(row Row) Symbol
 }
 
 func NewRow() Row {
@@ -286,4 +289,29 @@ func (r *row) GetEnteringSymbol() Symbol {
 		}
 	}
 	return NewInvalidSymbol()
+}
+
+/**
+ * Compute the entering symbol for the dual optimize operation.
+ *
+ * This method will return the symbol in the row which has a positive
+ * coefficient and yields the minimum ratio for its respective symbol
+ * in the objective function. The provided row *must* be infeasible.
+ * If no symbol is found which meats the criteria, an invalid symbol
+ * is returned.
+ */
+func (r *row) GetDualEnteringSymbol(row Row) Symbol {
+	objective := r
+	ratio := math.MaxFloat64
+	entering := NewInvalidSymbol()
+	for sym, coeff := range row.GetCells() {
+		if !sym.IsDummy() && coeff > 0.0 {
+			r := objective.CoefficientFor(sym) / coeff
+			if r < ratio {
+				ratio = r
+				entering = sym
+			}
+		}
+	}
+	return entering
 }

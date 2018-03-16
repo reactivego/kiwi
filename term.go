@@ -20,11 +20,14 @@ type Term interface {
 	EqualsVariable(variable Variable) Constraint
 	Equals(term Term) Constraint
 	EqualsExpression(expression Expression) Constraint
-
 	LessThanOrEqualToConstant(constant float64) Constraint
 	LessThanOrEqualToVariable(variable Variable) Constraint
 	LessThanOrEqualTo(term Term) Constraint
 	LessThanOrEqualToExpression(expression Expression) Constraint
+	GreaterThanOrEqualToConstant(constant float64) Constraint
+	GreaterThanOrEqualToVariable(variable Variable) Constraint
+	GreaterThanOrEqualTo(term Term) Constraint
+	GreaterThanOrEqualToExpression(expression Expression) Constraint
 }
 
 func NewTermFromVariableAndCoefficient(variable Variable, coefficient float64) Term {
@@ -110,4 +113,20 @@ func (t term) LessThanOrEqualTo(term Term) Constraint {
 
 func (t term) LessThanOrEqualToExpression(expression Expression) Constraint {
 	return NewConstraint(t.AddExpression(expression.Negate()), op.LE)
+}
+
+func (t term) GreaterThanOrEqualToConstant(constant float64) Constraint {
+	return NewConstraint(t.AddConstant(-constant), op.GE)
+}
+
+func (t term) GreaterThanOrEqualToVariable(variable Variable) Constraint {
+	return NewConstraint(t.Add(variable.Negate()), op.GE)
+}
+
+func (t term) GreaterThanOrEqualTo(term Term) Constraint {
+	return NewConstraint(t.Add(term.Negate()), op.GE)
+}
+
+func (t term) GreaterThanOrEqualToExpression(expression Expression) Constraint {
+	return NewConstraint(t.AddExpression(expression.Negate()), op.GE)
 }
