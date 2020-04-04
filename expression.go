@@ -1,6 +1,6 @@
 package kiwi
 
-import op "kiwi/operator"
+import "github.com/reactivego/kiwi/op"
 
 type Expression interface {
 	GetTerms() []Term

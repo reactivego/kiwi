@@ -1,10 +1,11 @@
 package kiwi
 
 import (
-	op "kiwi/operator"
-	"kiwi/strength"
-	"kiwi/symbol"
 	"math"
+
+	"github.com/reactivego/kiwi/op"
+	"github.com/reactivego/kiwi/strength"
+	"github.com/reactivego/kiwi/symbol"
 )
 
 type Solver interface {

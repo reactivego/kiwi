@@ -1,6 +1,6 @@
 package kiwi
 
-import "kiwi/symbol"
+import "github.com/reactivego/kiwi/symbol"
 
 type Symbol interface {
 	Type() symbol.Type

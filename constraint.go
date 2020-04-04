@@ -1,8 +1,8 @@
 package kiwi
 
 import (
-	op "kiwi/operator"
-	"kiwi/strength"
+	"github.com/reactivego/kiwi/op"
+	"github.com/reactivego/kiwi/strength"
 )
 
 type Constraint interface {

@@ -1,7 +1,7 @@
 package kiwi
 
 import (
-	"kiwi/strength"
+	"github.com/reactivego/kiwi/strength"
 	"runtime"
 	"testing"
 )

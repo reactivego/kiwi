@@ -1,4 +1,4 @@
-package operator
+package op
 
 const (
 	LE Type = iota
