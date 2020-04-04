@@ -162,7 +162,104 @@ func (s *solver) AddConstraint(constraint Constraint) error {
 }
 
 func (s *solver) RemoveConstraint(constraint Constraint) error {
-	return nil
+	tag, present := s.cns[constraint]
+	if !present {
+		return UnknownConstraintException{constraint}
+	}
+
+	delete(s.cns, constraint)
+	s.RemoveConstraintEffects(constraint, tag)
+
+	if _, present := s.rows[tag.marker]; present {
+		delete(s.rows, tag.marker)
+	} else {
+		row, present := s.GetMarkerLeavingRow(tag.marker)
+		if !present {
+			return InternalSolverError{"internal solver error"}
+		}
+
+		//This looks wrong! changes made below
+		//Symbol leaving = tag.marker;
+		//rows.remove(tag.marker);
+
+		var leaving Symbol
+		for s, v := range s.rows {
+			if v == row {
+				leaving = s
+			}
+		}
+		if leaving == nil {
+			return InternalSolverError{"internal solver error"}
+		}
+
+		delete(s.rows, leaving)
+		row.SolveForPair(leaving, tag.marker)
+		s.substitute(tag.marker, row)
+	}
+
+	return s.optimize(s.objective)
+}
+
+func (s *solver) RemoveConstraintEffects(constraint Constraint, tag tag) {
+	if constraint == nil {
+		panic("constraint is nil")
+	}
+
+	if tag.marker.IsError() {
+		s.RemoveMarkerEffects(tag.marker, constraint.GetStrength())
+	} else if tag.other.IsError() {
+		s.RemoveMarkerEffects(tag.other, constraint.GetStrength())
+	}
+}
+
+func (s *solver) RemoveMarkerEffects(marker Symbol, strength strength.Value) {
+	if row, present := s.rows[marker]; present {
+		s.objective.InsertRowWithCoefficient(row, -strength.Float64())
+	} else {
+		s.objective.InsertSymbolWithCoefficient(marker, -strength.Float64())
+	}
+}
+
+func (s *solver) GetMarkerLeavingRow(marker Symbol) (Row, bool) {
+
+	dmax := math.MaxFloat64
+	r1 := dmax
+	r2 := dmax
+
+	var first, second, third Row
+
+	for s, candidateRow := range s.rows {
+		c := candidateRow.CoefficientFor(marker)
+		if c == 0.0 {
+			continue
+		}
+		if s.IsExternal() {
+			third = candidateRow
+		} else if c < 0.0 {
+			r := -candidateRow.GetConstant() / c
+			if r < r1 {
+				r1 = r
+				first = candidateRow
+			}
+		} else {
+			r := candidateRow.GetConstant() / c
+			if r < r2 {
+				r2 = r
+				second = candidateRow
+			}
+		}
+	}
+
+	if first != nil {
+		return first, true
+	}
+	if second != nil {
+		return second, true
+	}
+	if third != nil {
+		return third, true
+	}
+	return nil, false
 }
 
 func (s *solver) HasConstraint(constraint Constraint) bool {
@@ -277,6 +374,11 @@ func (s *solver) createRow(constraint Constraint) (row Row, tag tag) {
 	// Ensure the row has a positive constant.
 	if row.GetConstant() < 0.0 {
 		row.ReverseSign()
+	}
+
+	// Ensure the tag.other symbol is not nil
+	if tag.other == nil {
+		tag.other = NewInvalidSymbol()
 	}
 
 	return

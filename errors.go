@@ -21,3 +21,11 @@ type UnsatisfiableConstraintException struct {
 func (e UnsatisfiableConstraintException) Error() string {
 	return "UnsatisfiableConstraintException"
 }
+
+type UnknownConstraintException struct {
+	constraint Constraint
+}
+
+func (e UnknownConstraintException) Error() string {
+	return "UnknownConstraintException"
+}

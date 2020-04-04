@@ -131,6 +131,53 @@ func TestCasso1(t *testing.T) {
 	}
 }
 
+func TestAddDelete1(t *testing.T) {
+	x := NewVariable("x")
+	solver := NewSolver()
+
+	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0).ModifyStrength(strength.WEAK))
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 100, "x =")
+
+	c10 := x.LessThanOrEqualToConstant(10.0)
+	c20 := x.LessThanOrEqualToConstant(20.0)
+
+	solver.AddConstraint(c10)
+	solver.AddConstraint(c20)
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+
+	solver.RemoveConstraint(c10)
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 20, "x =")
+
+	solver.RemoveConstraint(c20)
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 100, "x =")
+
+	c10again := x.LessThanOrEqualToConstant(10.0)
+
+	solver.AddConstraint(c10again)
+	solver.AddConstraint(c10)
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+
+	solver.RemoveConstraint(c10)
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+
+	solver.RemoveConstraint(c10again)
+	solver.UpdateVariables()
+
+	assertEqualsFloat64(t, x.GetValue(), 100, "x =")
+}
+
 func TestInconsistent1(t *testing.T) {
 	x := NewVariable("x")
 	solver := NewSolver()
