@@ -22,7 +22,14 @@ type Expression interface {
 	EqualsTerm(term Term) Constraint
 	Equals(expression Expression) Constraint
 
+	LessThanOrEqualToConstant(constant float64) Constraint
+	LessThanOrEqualToVariable(variable Variable) Constraint
+	LessThanOrEqualToTerm(term Term) Constraint
 	LessThanOrEqualTo(expression Expression) Constraint
+
+	GreaterThanOrEqualToConstant(constant float64) Constraint
+	GreaterThanOrEqualToVariable(variable Variable) Constraint
+	GreaterThanOrEqualToTerm(term Term) Constraint
 	GreaterThanOrEqualTo(expression Expression) Constraint
 }
 
@@ -121,8 +128,32 @@ func (e expression) Equals(expression Expression) Constraint {
 	return NewConstraint(e.Add(expression.Negate()), op.EQ)
 }
 
+func (e expression) LessThanOrEqualToConstant(constant float64) Constraint {
+	return NewConstraint(e.AddConstant(-constant), op.LE)
+}
+
+func (e expression) LessThanOrEqualToVariable(variable Variable) Constraint {
+	return NewConstraint(e.AddTerm(variable.Negate()), op.LE)
+}
+
+func (e expression) LessThanOrEqualToTerm(term Term) Constraint {
+	return NewConstraint(e.AddTerm(term.Negate()), op.LE)
+}
+
 func (e expression) LessThanOrEqualTo(expression Expression) Constraint {
 	return NewConstraint(e.Add(expression.Negate()), op.LE)
+}
+
+func (e expression) GreaterThanOrEqualToConstant(constant float64) Constraint {
+	return NewConstraint(e.AddConstant(-constant), op.GE)
+}
+
+func (e expression) GreaterThanOrEqualToVariable(variable Variable) Constraint {
+	return NewConstraint(e.AddTerm(variable.Negate()), op.GE)
+}
+
+func (e expression) GreaterThanOrEqualToTerm(term Term) Constraint {
+	return NewConstraint(e.AddTerm(term.Negate()), op.GE)
 }
 
 func (e expression) GreaterThanOrEqualTo(expression Expression) Constraint {
