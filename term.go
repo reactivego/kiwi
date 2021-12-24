@@ -20,10 +20,12 @@ type Term interface {
 	EqualsVariable(variable Variable) Constraint
 	Equals(term Term) Constraint
 	EqualsExpression(expression Expression) Constraint
+
 	LessThanOrEqualToConstant(constant float64) Constraint
 	LessThanOrEqualToVariable(variable Variable) Constraint
 	LessThanOrEqualTo(term Term) Constraint
 	LessThanOrEqualToExpression(expression Expression) Constraint
+
 	GreaterThanOrEqualToConstant(constant float64) Constraint
 	GreaterThanOrEqualToVariable(variable Variable) Constraint
 	GreaterThanOrEqualTo(term Term) Constraint

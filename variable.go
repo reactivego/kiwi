@@ -21,6 +21,7 @@ type Variable interface {
 	LessThanOrEqualTo(variable Variable) Constraint
 	LessThanOrEqualToTerm(term Term) Constraint
 	LessThanOrEqualToExpression(expression Expression) Constraint
+
 	GreaterThanOrEqualToConstant(constant float64) Constraint
 	GreaterThanOrEqualTo(variable Variable) Constraint
 	GreaterThanOrEqualToTerm(term Term) Constraint
