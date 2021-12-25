@@ -7,7 +7,7 @@ type Variable struct {
 
 var _ Constrainer = &Variable{}
 
-func KV(n string, v float64) *Variable {
+func V(n string, v float64) *Variable {
 	return &Variable{n, v}
 }
 
