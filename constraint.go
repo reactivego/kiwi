@@ -2,11 +2,19 @@ package kiwi
 
 type Constraint struct {
 	Expression Expression
-	Op         Operator
+	Operator   Operator
 	Strength   Strength
 }
 
-func NewConstraintWithStrength(expr Expression, op Operator, strength Strength) *Constraint {
+type ConstraintOption func(*Constraint)
+
+func WithStrength(strength Strength) ConstraintOption {
+	return func(c *Constraint) {
+		c.Strength = strength.Clip()
+	}
+}
+
+func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *Constraint {
 	// reduce: c + pv + qv + rw -> c + (p+q)v + rw
 	var vars = make(map[*Variable]float64)
 	for _, t := range expr.Terms {
@@ -17,11 +25,11 @@ func NewConstraintWithStrength(expr Expression, op Operator, strength Strength) 
 		terms = append(terms, Term{Variable: v, Coefficient: c})
 	}
 	expr = Expression{Terms: terms, Constant: expr.Constant}
-	return &Constraint{Expression: expr, Op: op, Strength: strength.Clip()}
-}
-
-func NewConstraint(expr Expression, op Operator) *Constraint {
-	return NewConstraintWithStrength(expr, op, REQUIRED)
+	c := &Constraint{Expression: expr, Operator: op, Strength: REQUIRED}
+	for _, opt := range options {
+		opt(c)
+	}
+	return c
 }
 
 func (c *Constraint) ModifyStrength(strength Strength) *Constraint {
