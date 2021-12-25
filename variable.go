@@ -5,6 +5,12 @@ type Variable struct {
 	Value float64
 }
 
+var _ Constrainer = &Variable{}
+
+func KV(n string, v float64) Variable {
+	return Variable{n, v}
+}
+
 func NewVariable(name string) *Variable {
 	return &Variable{Name: name}
 }

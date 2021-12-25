@@ -5,6 +5,8 @@ type Expression struct {
 	Constant float64
 }
 
+var _ Constrainer = Expression{}
+
 func (e Expression) GetValue() float64 {
 	result := e.Constant
 	for _, t := range e.Terms {
