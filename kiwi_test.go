@@ -109,12 +109,12 @@ func TestCasso1(t *testing.T) {
 		t.Error(err)
 	}
 	// x = 10.0 [WEAK]
-	err = solver.AddConstraint(x.EqualsConstant(10.0).ModifyStrength(WEAK))
+	err = solver.AddConstraint(x.EqualsConstant(10.0), WithStrength(WEAK))
 	if err != nil {
 		t.Error(err)
 	}
 	// y = 10.0 [WEAK]
-	err = solver.AddConstraint(y.EqualsConstant(10.0).ModifyStrength(WEAK))
+	err = solver.AddConstraint(y.EqualsConstant(10.0), WithStrength(WEAK))
 	if err != nil {
 		t.Error(err)
 	}
@@ -134,7 +134,7 @@ func TestAddDelete1(t *testing.T) {
 	x := NewVariable("x")
 	solver := NewSolver()
 
-	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0).ModifyStrength(WEAK))
+	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0), WithStrength(WEAK))
 	solver.UpdateVariables()
 
 	assertEqualsFloat64(t, x.Value, 100, "x =")

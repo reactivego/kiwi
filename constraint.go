@@ -31,8 +31,3 @@ func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *C
 	}
 	return c
 }
-
-func (c *Constraint) ModifyStrength(strength Strength) *Constraint {
-	c.Strength = strength.Clip()
-	return c
-}

@@ -36,10 +36,14 @@ UnsatisfiableConstraint
 	The given constraint is required and cannot be satisfied.
 
 */
-func (s *Solver) AddConstraint(constraint *Constraint) error {
+func (s *Solver) AddConstraint(constraint *Constraint, options ...ConstraintOption) error {
 
-	if _, present := s.cns[constraint]; present {
+	if s.HasConstraint(constraint) {
 		return DuplicateConstraintException
+	}
+
+	for _, option := range options {
+		option(constraint)
 	}
 
 	row, tag := s.createRow(constraint)
@@ -84,12 +88,12 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 	}
 
 	delete(s.cns, constraint)
-	s.RemoveConstraintEffects(constraint, tag)
+	s.removeConstraintEffects(constraint, tag)
 
 	if _, present := s.rows[tag.marker]; present {
 		delete(s.rows, tag.marker)
 	} else {
-		row, present := s.GetMarkerLeavingRow(tag.marker)
+		row, present := s.getMarkerLeavingRow(tag.marker)
 		if !present {
 			return InternalSolverError
 		}
@@ -116,19 +120,19 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 	return s.optimize(s.objective)
 }
 
-func (s *Solver) RemoveConstraintEffects(constraint *Constraint, tag tag) {
+func (s *Solver) removeConstraintEffects(constraint *Constraint, tag tag) {
 	if constraint == nil {
 		panic("constraint is nil")
 	}
 
 	if tag.marker.IsError() {
-		s.RemoveMarkerEffects(tag.marker, constraint.Strength)
+		s.removeMarkerEffects(tag.marker, constraint.Strength)
 	} else if tag.other.IsError() {
-		s.RemoveMarkerEffects(tag.other, constraint.Strength)
+		s.removeMarkerEffects(tag.other, constraint.Strength)
 	}
 }
 
-func (s *Solver) RemoveMarkerEffects(marker *Symbol, strength Strength) {
+func (s *Solver) removeMarkerEffects(marker *Symbol, strength Strength) {
 	if row, present := s.rows[marker]; present {
 		s.objective.InsertRowWithCoefficient(row, float64(-strength))
 	} else {
@@ -136,8 +140,7 @@ func (s *Solver) RemoveMarkerEffects(marker *Symbol, strength Strength) {
 	}
 }
 
-func (s *Solver) GetMarkerLeavingRow(marker *Symbol) (*Row, bool) {
-
+func (s *Solver) getMarkerLeavingRow(marker *Symbol) (*Row, bool) {
 	dmax := math.MaxFloat64
 	r1 := dmax
 	r2 := dmax
