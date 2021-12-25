@@ -15,13 +15,13 @@ func NewRowWithConstant(constant float64) *Row {
 	return &Row{Constant: constant, Cells: make(map[*Symbol]float64)}
 }
 
-func CopyRow(other *Row) *Row {
+func (r *Row) Copy() *Row {
 	// Maps are reference types, we can't just reference the other cell from the other row.
 	cells := make(map[*Symbol]float64)
-	for s, c := range other.Cells {
+	for s, c := range r.Cells {
 		cells[s] = c
 	}
-	return &Row{Constant: other.Constant, Cells: cells}
+	return &Row{r.Constant, cells}
 }
 
 /**

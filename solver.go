@@ -368,11 +368,11 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 func (s *Solver) addWithArtificialVariable(row *Row) bool {
 	// Create and add the artificial variable to the tableau
 	art := NewSymbol(SLACK)
-	s.rows[art] = CopyRow(row)
+	s.rows[art] = row.Copy()
 
 	// Optimize the artificial objective. This is successful only
 	// if the artificial objective could be optimized to zero.
-	s.artificialObjective = CopyRow(row)
+	s.artificialObjective = row.Copy()
 	s.optimize(s.artificialObjective)
 	success := NearZero(s.artificialObjective.Constant)
 	s.artificialObjective = nil
