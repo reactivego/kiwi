@@ -1,135 +1,42 @@
 package kiwi
 
-import (
-	"math"
+import "math"
 
-	"github.com/reactivego/kiwi/op"
-	"github.com/reactivego/kiwi/strength"
-	"github.com/reactivego/kiwi/symbol"
-)
-
-type Solver interface {
-
-	/* Add a constraint to the solver.
-
-	Returns
-	------
-	DuplicateConstraint
-		The given constraint has already been added to the solver.
-
-	UnsatisfiableConstraint
-		The given constraint is required and cannot be satisfied.
-
-	*/
-	AddConstraint(constraint Constraint) error
-
-	/* Remove a constraint from the solver.
-
-	Returns
-	------
-	UnknownConstraint
-		The given constraint has not been added to the solver.
-
-	*/
-	RemoveConstraint(constraint Constraint) error
-
-	/* Test whether a constraint has been added to the solver.
-
-	 */
-	HasConstraint(constraint Constraint) bool
-
-	/* Add an edit variable to the solver.
-
-	This method should be called before the `suggestValue` method is
-	used to supply a suggested value for the given edit variable.
-
-	Returns
-	------
-	DuplicateEditVariable
-		The given edit variable has already been added to the solver.
-
-	BadRequiredStrength
-		The given strength is >= required.
-
-	*/
-	AddEditVariable(variable Variable, strength float64) error
-
-	/* Remove an edit variable from the solver.
-
-	Returns
-	------
-	UnknownEditVariable
-		The given edit variable has not been added to the solver.
-
-	*/
-	RemoveEditVariable(variable Variable) error
-
-	/* Test whether an edit variable has been added to the solver.
-
-	 */
-	HasEditVariable(variable Variable) bool
-
-	/* Suggest a value for the given edit variable.
-
-	This method should be used after an edit variable as been added to
-	the solver in order to suggest the value for that variable. After
-	all suggestions have been made, the `solve` method can be used to
-	update the values of all variables.
-
-	Returns
-	------
-	UnknownEditVariable
-		The given edit variable has not been added to the solver.
-
-	*/
-	SuggestValue(variable Variable, value float64) error
-
-	/* Update the values of the external solver variables.
-
-	 */
-	UpdateVariables()
-
-	/* Reset the solver to the empty starting condition.
-
-	This method resets the internal solver state to the empty starting
-	condition, as if no constraints or edit variables have been added.
-	This can be faster than deleting the solver and creating a new one
-	when the entire system must change, since it can avoid unecessary
-	heap (de)allocations.
-
-	*/
-	Reset()
-
-	/* Dump a representation of the solver internals to stdout.
-
-	 */
-	Dump()
+type Solver struct {
+	cns                 map[*Constraint]tag
+	rows                map[*Symbol]*Row
+	vars                map[*Variable]*Symbol
+	infeasibleRows      []*Symbol
+	objective           *Row
+	artificialObjective *Row
 }
 
-func NewSolver() Solver {
-	return &solver{
-		cns:       map[Constraint]tag{},
-		rows:      map[Symbol]Row{},
-		vars:      map[Variable]Symbol{},
+type tag struct {
+	marker *Symbol
+	other  *Symbol
+}
+
+func NewSolver() *Solver {
+	return &Solver{
+		cns:       map[*Constraint]tag{},
+		rows:      map[*Symbol]*Row{},
+		vars:      map[*Variable]*Symbol{},
 		objective: NewRow(),
 	}
 }
 
-type solver struct {
-	cns                 map[Constraint]tag
-	rows                map[Symbol]Row
-	vars                map[Variable]Symbol
-	infeasibleRows      []Symbol
-	objective           Row
-	artificialObjective Row
-}
+/* Add a constraint to the solver.
 
-type tag struct {
-	marker Symbol
-	other  Symbol
-}
+Returns
+------
+DuplicateConstraint
+	The given constraint has already been added to the solver.
 
-func (s *solver) AddConstraint(constraint Constraint) error {
+UnsatisfiableConstraint
+	The given constraint is required and cannot be satisfied.
+
+*/
+func (s *Solver) AddConstraint(constraint *Constraint) error {
 
 	if _, present := s.cns[constraint]; present {
 		return DuplicateConstraintException{}
@@ -139,7 +46,7 @@ func (s *solver) AddConstraint(constraint Constraint) error {
 	subject := row.ChooseSubject(tag)
 
 	if subject.IsInvalid() && row.AllDummies() {
-		if !NearZero(row.GetConstant()) {
+		if !NearZero(row.Constant) {
 			return UnsatisfiableConstraintException{constraint}
 		} else {
 			subject = tag.marker
@@ -162,7 +69,15 @@ func (s *solver) AddConstraint(constraint Constraint) error {
 	return s.optimize(s.objective)
 }
 
-func (s *solver) RemoveConstraint(constraint Constraint) error {
+/* Remove a constraint from the solver.
+
+Returns
+------
+UnknownConstraint
+	The given constraint has not been added to the solver.
+
+*/
+func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 	tag, present := s.cns[constraint]
 	if !present {
 		return UnknownConstraintException{constraint}
@@ -183,7 +98,7 @@ func (s *solver) RemoveConstraint(constraint Constraint) error {
 		//Symbol leaving = tag.marker;
 		//rows.remove(tag.marker);
 
-		var leaving Symbol
+		var leaving *Symbol
 		for s, v := range s.rows {
 			if v == row {
 				leaving = s
@@ -201,33 +116,33 @@ func (s *solver) RemoveConstraint(constraint Constraint) error {
 	return s.optimize(s.objective)
 }
 
-func (s *solver) RemoveConstraintEffects(constraint Constraint, tag tag) {
+func (s *Solver) RemoveConstraintEffects(constraint *Constraint, tag tag) {
 	if constraint == nil {
 		panic("constraint is nil")
 	}
 
 	if tag.marker.IsError() {
-		s.RemoveMarkerEffects(tag.marker, constraint.GetStrength())
+		s.RemoveMarkerEffects(tag.marker, constraint.Strength)
 	} else if tag.other.IsError() {
-		s.RemoveMarkerEffects(tag.other, constraint.GetStrength())
+		s.RemoveMarkerEffects(tag.other, constraint.Strength)
 	}
 }
 
-func (s *solver) RemoveMarkerEffects(marker Symbol, strength strength.Value) {
+func (s *Solver) RemoveMarkerEffects(marker *Symbol, strength Strength) {
 	if row, present := s.rows[marker]; present {
-		s.objective.InsertRowWithCoefficient(row, -strength.Float64())
+		s.objective.InsertRowWithCoefficient(row, float64(-strength))
 	} else {
-		s.objective.InsertSymbolWithCoefficient(marker, -strength.Float64())
+		s.objective.InsertSymbolWithCoefficient(marker, float64(-strength))
 	}
 }
 
-func (s *solver) GetMarkerLeavingRow(marker Symbol) (Row, bool) {
+func (s *Solver) GetMarkerLeavingRow(marker *Symbol) (*Row, bool) {
 
 	dmax := math.MaxFloat64
 	r1 := dmax
 	r2 := dmax
 
-	var first, second, third Row
+	var first, second, third *Row
 
 	for s, candidateRow := range s.rows {
 		c := candidateRow.CoefficientFor(marker)
@@ -237,13 +152,13 @@ func (s *solver) GetMarkerLeavingRow(marker Symbol) (Row, bool) {
 		if s.IsExternal() {
 			third = candidateRow
 		} else if c < 0.0 {
-			r := -candidateRow.GetConstant() / c
+			r := -candidateRow.Constant / c
 			if r < r1 {
 				r1 = r
 				first = candidateRow
 			}
 		} else {
-			r := candidateRow.GetConstant() / c
+			r := candidateRow.Constant / c
 			if r < r2 {
 				r2 = r
 				second = candidateRow
@@ -263,41 +178,114 @@ func (s *solver) GetMarkerLeavingRow(marker Symbol) (Row, bool) {
 	return nil, false
 }
 
-func (s *solver) HasConstraint(constraint Constraint) bool {
+/* Test whether a constraint has been added to the solver.
+
+ */
+func (s *Solver) HasConstraint(constraint *Constraint) bool {
 	return false
 }
 
-func (s *solver) AddEditVariable(variable Variable, strength float64) error {
+/* Add an edit variable to the solver.
+
+This method should be called before the `suggestValue` method is
+used to supply a suggested value for the given edit variable.
+
+Returns
+------
+DuplicateEditVariable
+	The given edit variable has already been added to the solver.
+
+BadRequiredStrength
+	The given strength is >= required.
+
+*/
+func (s *Solver) AddEditVariable(variable *Variable, strength float64) error {
+
+	// if (edits.exists(variable)) {
+	// 	throw SolverError.DuplicateEditVariable;
+	// }
+
+	// strength = Strength.clamp(strength);
+
+	// if (strength == Strength.required) {
+	// 	throw SolverError.BadRequiredStrength;
+	// }
+
+	// var terms = new Array<Term>();
+	// terms.push(new Term(variable));
+	// var constraint = new Constraint(new Expression(terms), RelationalOperator.EQ, strength);
+	// addConstraint(constraint);
+	// var info = new EditInfo(constraint, constraints.get(constraint), 0.0);
+	// edits.set(variable, info);
 	return nil
 }
 
-func (s *solver) RemoveEditVariable(variable Variable) error {
+/* Remove an edit variable from the solver.
+
+Returns
+------
+UnknownEditVariable
+	The given edit variable has not been added to the solver.
+
+*/
+func (s *Solver) RemoveEditVariable(variable *Variable) error {
 	return nil
 }
 
-func (s *solver) HasEditVariable(variable Variable) bool {
+/* Test whether an edit variable has been added to the solver.
+
+ */
+func (s *Solver) HasEditVariable(variable *Variable) bool {
 	return false
 }
 
-func (s *solver) SuggestValue(variable Variable, value float64) error {
+/* Suggest a value for the given edit variable.
+
+This method should be used after an edit variable as been added to
+the solver in order to suggest the value for that variable. After
+all suggestions have been made, the `solve` method can be used to
+update the values of all variables.
+
+Returns
+------
+UnknownEditVariable
+	The given edit variable has not been added to the solver.
+
+*/
+func (s *Solver) SuggestValue(variable *Variable, value float64) error {
 	return nil
 }
 
-func (s *solver) UpdateVariables() {
+/* Update the values of the external solver variables.
+
+ */
+func (s *Solver) UpdateVariables() {
 	for variable, symbol := range s.vars {
 		if row, present := s.rows[symbol]; present {
-			variable.SetValue(row.GetConstant())
+			variable.Value = row.Constant
 		} else {
-			variable.SetValue(0.0)
+			variable.Value = 0.0
 		}
 	}
 }
 
-func (s *solver) Reset() {
+/* Reset the solver to the empty starting condition.
+
+This method resets the internal solver state to the empty starting
+condition, as if no constraints or edit variables have been added.
+This can be faster than deleting the solver and creating a new one
+when the entire system must change, since it can avoid unecessary
+heap (de)allocations.
+
+*/
+func (s *Solver) Reset() {
 
 }
 
-func (s *solver) Dump() {
+/* Dump a representation of the solver internals to stdout.
+
+ */
+func (s *Solver) Dump() {
 
 }
 
@@ -318,62 +306,62 @@ func (s *solver) Dump() {
  * The tag will be updated with the marker and error symbols to use
  * for tracking the movement of the constraint in the tableau.
  */
-func (s *solver) createRow(constraint Constraint) (row Row, tag tag) {
-	expression := constraint.GetExpression()
-	row = NewRowWithConstant(expression.GetConstant())
-	for _, term := range expression.GetTerms() {
-		if NearZero(term.GetCoefficient()) {
+func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
+	expression := constraint.Expression
+	row = NewRowWithConstant(expression.Constant)
+	for _, term := range expression.Terms {
+		if NearZero(term.Coefficient) {
 			continue
 		}
 
-		variable := term.GetVariable()
+		variable := term.Variable
 		sym, present := s.vars[variable]
 		if !present {
-			sym = NewSymbol(symbol.EXTERNAL)
+			sym = NewSymbol(EXTERNAL)
 			s.vars[variable] = sym
 		}
 
 		if otherRow, present := s.rows[sym]; present {
-			row.InsertRowWithCoefficient(otherRow, term.GetCoefficient())
+			row.InsertRowWithCoefficient(otherRow, term.Coefficient)
 		} else {
-			row.InsertSymbolWithCoefficient(sym, term.GetCoefficient())
+			row.InsertSymbolWithCoefficient(sym, term.Coefficient)
 		}
 	}
 
-	switch constraint.GetOp() {
-	case op.LE, op.GE:
+	switch constraint.Op {
+	case LE, GE:
 		coeff := -1.0
-		if constraint.GetOp() == op.LE {
+		if constraint.Op == LE {
 			coeff = 1.0
 		}
-		slack := NewSymbol(symbol.SLACK)
+		slack := NewSymbol(SLACK)
 		tag.marker = slack
 		row.InsertSymbolWithCoefficient(slack, coeff)
-		if constraint.GetStrength() < strength.REQUIRED {
-			error := NewSymbol(symbol.ERROR)
+		if constraint.Strength < REQUIRED {
+			error := NewSymbol(ERROR)
 			tag.other = error
 			row.InsertSymbolWithCoefficient(error, -coeff)
-			s.objective.InsertSymbolWithCoefficient(error, constraint.GetStrength().Float64())
+			s.objective.InsertSymbolWithCoefficient(error, float64(constraint.Strength))
 		}
-	case op.EQ:
-		if constraint.GetStrength() < strength.REQUIRED {
-			errplus := NewSymbol(symbol.ERROR)
-			errminus := NewSymbol(symbol.ERROR)
+	case EQ:
+		if constraint.Strength < REQUIRED {
+			errplus := NewSymbol(ERROR)
+			errminus := NewSymbol(ERROR)
 			tag.marker = errplus
 			tag.other = errminus
 			row.InsertSymbolWithCoefficient(errplus, -1.0) // v = eplus - eminus
 			row.InsertSymbolWithCoefficient(errminus, 1.0) // v - eplus + eminus = 0
-			s.objective.InsertSymbolWithCoefficient(errplus, constraint.GetStrength().Float64())
-			s.objective.InsertSymbolWithCoefficient(errminus, constraint.GetStrength().Float64())
+			s.objective.InsertSymbolWithCoefficient(errplus, float64(constraint.Strength))
+			s.objective.InsertSymbolWithCoefficient(errminus, float64(constraint.Strength))
 		} else {
-			dummy := NewSymbol(symbol.DUMMY)
+			dummy := NewSymbol(DUMMY)
 			tag.marker = dummy
 			row.InsertSymbol(dummy)
 		}
 	}
 
 	// Ensure the row has a positive constant.
-	if row.GetConstant() < 0.0 {
+	if row.Constant < 0.0 {
 		row.ReverseSign()
 	}
 
@@ -390,23 +378,23 @@ func (s *solver) createRow(constraint Constraint) (row Row, tag tag) {
  *
  * This will return false if the constraint cannot be satisfied.
  */
-func (s *solver) addWithArtificialVariable(row Row) bool {
+func (s *Solver) addWithArtificialVariable(row *Row) bool {
 	// Create and add the artificial variable to the tableau
-	art := NewSymbol(symbol.SLACK)
+	art := NewSymbol(SLACK)
 	s.rows[art] = CopyRow(row)
 
 	// Optimize the artificial objective. This is successful only
 	// if the artificial objective could be optimized to zero.
 	s.artificialObjective = CopyRow(row)
 	s.optimize(s.artificialObjective)
-	success := NearZero(s.artificialObjective.GetConstant())
+	success := NearZero(s.artificialObjective.Constant)
 	s.artificialObjective = nil
 
 	// If the artificial variable is basic, pivot the row so that
 	// it becomes basic. If the row is constant, exit early.
 	if rowptr, present := s.rows[art]; present {
 		delete(s.rows, art)
-		if len(rowptr.GetCells()) == 0 {
+		if len(rowptr.Cells) == 0 {
 			return success
 		}
 		entering := rowptr.AnyPivotableSymbol()
@@ -434,7 +422,7 @@ func (s *solver) addWithArtificialVariable(row Row) bool {
  *
  * @returns InternalSolverError The value of the objective function is unbounded.
  */
-func (s *solver) optimize(objective Row) error {
+func (s *Solver) optimize(objective *Row) error {
 	for {
 		enterSym := objective.GetEnteringSymbol()
 		if enterSym.IsInvalid() {
@@ -443,13 +431,13 @@ func (s *solver) optimize(objective Row) error {
 
 		// Compute the row which holds the exit symbol for a pivot.
 		ratio := math.MaxFloat64
-		var exitSym Symbol
-		var exitRow Row
+		var exitSym *Symbol
+		var exitRow *Row
 		for sym, row := range s.rows {
 			if !sym.IsExternal() {
 				temp := row.CoefficientFor(enterSym)
 				if temp < 0.0 {
-					tempRatio := -row.GetConstant() / temp
+					tempRatio := -row.Constant / temp
 					if tempRatio < ratio {
 						ratio = tempRatio
 						exitSym = sym
@@ -482,7 +470,7 @@ func (s *solver) optimize(objective Row) error {
  *
  * @returns InternalSolverError The system cannot be dual optimized.
  */
-func (s *solver) dualOptimize() error {
+func (s *Solver) dualOptimize() error {
 	for len(s.infeasibleRows) > 0 {
 
 		last := len(s.infeasibleRows) - 1
@@ -491,7 +479,7 @@ func (s *solver) dualOptimize() error {
 		s.infeasibleRows = s.infeasibleRows[:last]
 		row := s.rows[leaving]
 
-		if row != nil && row.GetConstant() < 0.0 {
+		if row != nil && row.Constant < 0.0 {
 			entering := s.objective.GetDualEnteringSymbol(row)
 			if entering.IsInvalid() {
 				return InternalSolverError{"internal solver error"}
@@ -513,10 +501,10 @@ func (s *solver) dualOptimize() error {
  * This method will substitute all instances of the parametric symbol
  * in the tableau and the objective function with the given row.
  */
-func (s *solver) substitute(sym Symbol, row Row) {
+func (s *Solver) substitute(sym *Symbol, row *Row) {
 	for isym, irow := range s.rows {
 		irow.Substitute(sym, row)
-		if !isym.IsExternal() && irow.GetConstant() < 0.0 {
+		if !isym.IsExternal() && irow.Constant < 0.0 {
 			s.infeasibleRows = append(s.infeasibleRows, isym)
 		}
 	}

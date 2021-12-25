@@ -1,7 +1,6 @@
 package kiwi
 
 import (
-	"github.com/reactivego/kiwi/strength"
 	"runtime"
 	"testing"
 )
@@ -25,7 +24,7 @@ func TestSimpleNew(t *testing.T) {
 
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 18, "x =")
+	assertEqualsFloat64(t, x.Value, 18, "x =")
 }
 
 func TestSimple0(t *testing.T) {
@@ -37,12 +36,12 @@ func TestSimple0(t *testing.T) {
 	// x = 20
 	solver.AddConstraint(x.EqualsConstant(20))
 	// x + 2 = y + 10
-	solver.AddConstraint(x.AddConstant(2).Equals(y.AddConstant(10)))
+	solver.AddConstraint(x.AddConstant(2).EqualsExpression(y.AddConstant(10)))
 
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, y.GetValue(), 12, "y =")
-	assertEqualsFloat64(t, x.GetValue(), 20, "x =")
+	assertEqualsFloat64(t, y.Value, 12, "y =")
+	assertEqualsFloat64(t, x.Value, 20, "x =")
 }
 
 func TestSimple1(t *testing.T) {
@@ -51,9 +50,9 @@ func TestSimple1(t *testing.T) {
 	x := NewVariable("x")
 	y := NewVariable("y")
 
-	solver.AddConstraint(x.Equals(y))
+	solver.AddConstraint(x.EqualsVariable(y))
 	solver.UpdateVariables()
-	assertEqualsFloat64(t, x.GetValue(), y.GetValue(), "x = y =")
+	assertEqualsFloat64(t, x.Value, y.Value, "x = y =")
 }
 
 func TestSimple2(t *testing.T) {
@@ -65,11 +64,11 @@ func TestSimple2(t *testing.T) {
 	// x = 27
 	solver.AddConstraint(x.EqualsConstant(27))
 	// 10 x = 5 y
-	solver.AddConstraint(x.Multiply(10).Equals(y.Multiply(5)))
+	solver.AddConstraint(x.Multiply(10).EqualsTerm(y.Multiply(5)))
 
 	solver.UpdateVariables()
-	assertEqualsFloat64(t, x.GetValue(), 27, "x =")
-	assertEqualsFloat64(t, y.GetValue(), 54, "y =")
+	assertEqualsFloat64(t, x.Value, 27, "x =")
+	assertEqualsFloat64(t, y.Value, 54, "y =")
 }
 
 func TestCasso0(t *testing.T) {
@@ -90,7 +89,7 @@ func TestCasso0(t *testing.T) {
 
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 5, "x =")
+	assertEqualsFloat64(t, x.Value, 5, "x =")
 
 }
 
@@ -100,7 +99,7 @@ func TestCasso1(t *testing.T) {
 	solver := NewSolver()
 
 	// x <= y
-	err := solver.AddConstraint(x.LessThanOrEqualTo(y))
+	err := solver.AddConstraint(x.LessThanOrEqualToVariable(y))
 	if err != nil {
 		t.Error(err)
 	}
@@ -110,24 +109,24 @@ func TestCasso1(t *testing.T) {
 		t.Error(err)
 	}
 	// x = 10.0 [WEAK]
-	err = solver.AddConstraint(x.EqualsConstant(10.0).ModifyStrength(strength.WEAK))
+	err = solver.AddConstraint(x.EqualsConstant(10.0).ModifyStrength(WEAK))
 	if err != nil {
 		t.Error(err)
 	}
 	// y = 10.0 [WEAK]
-	err = solver.AddConstraint(y.EqualsConstant(10.0).ModifyStrength(strength.WEAK))
+	err = solver.AddConstraint(y.EqualsConstant(10.0).ModifyStrength(WEAK))
 	if err != nil {
 		t.Error(err)
 	}
 
 	solver.UpdateVariables()
 
-	if NearZero(x.GetValue() - 10.0) {
-		assertEqualsFloat64(t, x.GetValue(), 10, "x =")
-		assertEqualsFloat64(t, y.GetValue(), 13, "y =")
+	if NearZero(x.Value - 10.0) {
+		assertEqualsFloat64(t, x.Value, 10, "x =")
+		assertEqualsFloat64(t, y.Value, 13, "y =")
 	} else {
-		assertEqualsFloat64(t, x.GetValue(), 7, "x =")
-		assertEqualsFloat64(t, y.GetValue(), 10, "y =")
+		assertEqualsFloat64(t, x.Value, 7, "x =")
+		assertEqualsFloat64(t, y.Value, 10, "y =")
 	}
 }
 
@@ -135,10 +134,10 @@ func TestAddDelete1(t *testing.T) {
 	x := NewVariable("x")
 	solver := NewSolver()
 
-	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0).ModifyStrength(strength.WEAK))
+	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0).ModifyStrength(WEAK))
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 100, "x =")
+	assertEqualsFloat64(t, x.Value, 100, "x =")
 
 	c10 := x.LessThanOrEqualToConstant(10.0)
 	c20 := x.LessThanOrEqualToConstant(20.0)
@@ -147,17 +146,17 @@ func TestAddDelete1(t *testing.T) {
 	solver.AddConstraint(c20)
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+	assertEqualsFloat64(t, x.Value, 10, "x =")
 
 	solver.RemoveConstraint(c10)
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 20, "x =")
+	assertEqualsFloat64(t, x.Value, 20, "x =")
 
 	solver.RemoveConstraint(c20)
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 100, "x =")
+	assertEqualsFloat64(t, x.Value, 100, "x =")
 
 	c10again := x.LessThanOrEqualToConstant(10.0)
 
@@ -165,17 +164,17 @@ func TestAddDelete1(t *testing.T) {
 	solver.AddConstraint(c10)
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+	assertEqualsFloat64(t, x.Value, 10, "x =")
 
 	solver.RemoveConstraint(c10)
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 10, "x =")
+	assertEqualsFloat64(t, x.Value, 10, "x =")
 
 	solver.RemoveConstraint(c10again)
 	solver.UpdateVariables()
 
-	assertEqualsFloat64(t, x.GetValue(), 100, "x =")
+	assertEqualsFloat64(t, x.Value, 100, "x =")
 }
 
 func TestInconsistent1(t *testing.T) {
@@ -227,15 +226,15 @@ func TestInconsistent3(t *testing.T) {
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(x.GreaterThanOrEqualTo(w))
+	err = solver.AddConstraint(x.GreaterThanOrEqualToVariable(w))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(y.GreaterThanOrEqualTo(x))
+	err = solver.AddConstraint(y.GreaterThanOrEqualToVariable(x))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(z.GreaterThanOrEqualTo(y))
+	err = solver.AddConstraint(z.GreaterThanOrEqualToVariable(y))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}

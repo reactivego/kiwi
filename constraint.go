@@ -1,57 +1,30 @@
 package kiwi
 
-import (
-	"github.com/reactivego/kiwi/op"
-	"github.com/reactivego/kiwi/strength"
-)
-
-type Constraint interface {
-	GetExpression() Expression
-	GetOp() op.Type
-	GetStrength() strength.Value
-	ModifyStrength(strength strength.Value) Constraint
+type Constraint struct {
+	Expression Expression
+	Op         Operator
+	Strength   Strength
 }
 
-func NewConstraintWithStrength(expr Expression, op op.Type, strength strength.Value) Constraint {
+func NewConstraintWithStrength(expr Expression, op Operator, strength Strength) *Constraint {
 	// reduce: c + pv + qv + rw -> c + (p+q)v + rw
-	var vars = make(map[Variable]float64)
-	for _, t := range expr.GetTerms() {
-		vars[t.GetVariable()] = vars[t.GetVariable()] + t.GetCoefficient()
+	var vars = make(map[*Variable]float64)
+	for _, t := range expr.Terms {
+		vars[t.Variable] = vars[t.Variable] + t.Coefficient
 	}
-	var terms []Term
+	terms := make([]Term, 0, len(vars))
 	for v, c := range vars {
-		terms = append(terms, NewTermFromVariableAndCoefficient(v, c))
+		terms = append(terms, Term{Variable: v, Coefficient: c})
 	}
-	expr = NewExpressionFromTermsAndConstant(terms, expr.GetConstant())
-	return &constraint{expression: expr, op: op, strength: strength.Clip()}
+	expr = Expression{Terms: terms, Constant: expr.Constant}
+	return &Constraint{Expression: expr, Op: op, Strength: strength.Clip()}
 }
 
-func NewConstraint(expr Expression, op op.Type) Constraint {
-	return NewConstraintWithStrength(expr, op, strength.REQUIRED)
+func NewConstraint(expr Expression, op Operator) *Constraint {
+	return NewConstraintWithStrength(expr, op, REQUIRED)
 }
 
-// func CopyConstraintWithStrength(other Constraint, strength Strength) Constraint {
-// 	return other.ModifyStrength(strength)
-// }
-
-type constraint struct {
-	expression Expression
-	op         op.Type
-	strength   strength.Value
-}
-
-func (c constraint) GetExpression() Expression {
-	return c.expression
-}
-
-func (c constraint) GetOp() op.Type {
-	return c.op
-}
-
-func (c constraint) GetStrength() strength.Value {
-	return c.strength
-}
-
-func (c constraint) ModifyStrength(strength strength.Value) Constraint {
-	return &constraint{expression: c.expression, op: c.op, strength: strength.Clip()}
+func (c *Constraint) ModifyStrength(strength Strength) *Constraint {
+	c.Strength = strength.Clip()
+	return c
 }

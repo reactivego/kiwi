@@ -15,7 +15,7 @@ func (e InternalSolverError) Error() string {
 }
 
 type UnsatisfiableConstraintException struct {
-	constraint Constraint
+	constraint *Constraint
 }
 
 func (e UnsatisfiableConstraintException) Error() string {
@@ -23,7 +23,7 @@ func (e UnsatisfiableConstraintException) Error() string {
 }
 
 type UnknownConstraintException struct {
-	constraint Constraint
+	constraint *Constraint
 }
 
 func (e UnknownConstraintException) Error() string {

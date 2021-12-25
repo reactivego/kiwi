@@ -1,118 +1,78 @@
 package kiwi
 
-type Variable interface {
-	GetName() string
-	GetValue() float64
-	SetValue(value float64)
-
-	Multiply(coefficient float64) Term
-	Divide(denominator float64) Term
-	Negate() Term
-
-	AddConstant(constant float64) Expression
-	Add(variable Variable) Expression
-
-	EqualsConstant(constant float64) Constraint
-	Equals(variable Variable) Constraint
-	EqualsTerm(term Term) Constraint
-	EqualsExpression(expression Expression) Constraint
-
-	LessThanOrEqualToConstant(constant float64) Constraint
-	LessThanOrEqualTo(variable Variable) Constraint
-	LessThanOrEqualToTerm(term Term) Constraint
-	LessThanOrEqualToExpression(expression Expression) Constraint
-
-	GreaterThanOrEqualToConstant(constant float64) Constraint
-	GreaterThanOrEqualTo(variable Variable) Constraint
-	GreaterThanOrEqualToTerm(term Term) Constraint
-	GreaterThanOrEqualToExpression(expression Expression) Constraint
+type Variable struct {
+	Name  string
+	Value float64
 }
 
-func NewVariable(name string) Variable {
-	return &variable{name: name}
+func NewVariable(name string) *Variable {
+	return &Variable{Name: name}
 }
 
-type variable struct {
-	name  string
-	value float64
+func (v *Variable) Multiply(coefficient float64) Term {
+	return Term{Variable: v, Coefficient: coefficient}
 }
 
-func (v *variable) GetName() string {
-	return v.name
+func (v *Variable) Divide(denominator float64) Term {
+	return Term{Variable: v, Coefficient: 1.0 / denominator}
 }
 
-func (v *variable) GetValue() float64 {
-	return v.value
+func (v *Variable) Negate() Term {
+	return Term{Variable: v, Coefficient: -1.0}
 }
 
-func (v *variable) SetValue(value float64) {
-	v.value = value
+func (v *Variable) AddConstant(constant float64) Expression {
+	return Term{Variable: v, Coefficient: 1.0}.AddConstant(constant)
 }
 
-func (v *variable) Multiply(coefficient float64) Term {
-	return NewTermFromVariableAndCoefficient(v, coefficient)
+func (v *Variable) AddVariable(variable *Variable) Expression {
+	return Term{Variable: v, Coefficient: 1.0}.AddVariable(variable)
 }
 
-func (v *variable) Divide(denominator float64) Term {
-	return NewTermFromVariableAndCoefficient(v, 1.0/denominator)
+func (v *Variable) EqualsConstant(constant float64) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.EqualsConstant(constant)
 }
 
-func (v *variable) Negate() Term {
-	return NewTermFromVariableAndCoefficient(v, -1.0)
+func (v *Variable) EqualsVariable(variable *Variable) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.EqualsVariable(variable)
 }
 
-func (v *variable) AddConstant(constant float64) Expression {
-	return NewTermFromVariable(v).AddConstant(constant)
-}
-
-func (v *variable) Add(variable Variable) Expression {
-	return NewTermFromVariable(v).AddVariable(variable)
-}
-
-func (v *variable) EqualsConstant(constant float64) Constraint {
-	return NewTermFromVariable(v).EqualsConstant(constant)
-}
-
-func (v *variable) Equals(variable Variable) Constraint {
-	return NewTermFromVariable(v).EqualsVariable(variable)
-}
-
-func (v *variable) EqualsTerm(term Term) Constraint {
+func (v *Variable) EqualsTerm(term Term) *Constraint {
 	return term.EqualsVariable(v)
 }
 
-func (v *variable) EqualsExpression(expression Expression) Constraint {
+func (v *Variable) EqualsExpression(expression Expression) *Constraint {
 	return expression.EqualsVariable(v)
 }
 
-func (v *variable) LessThanOrEqualToConstant(constant float64) Constraint {
-	return NewTermFromVariable(v).LessThanOrEqualToConstant(constant)
+func (v *Variable) LessThanOrEqualToConstant(constant float64) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToConstant(constant)
 }
 
-func (v *variable) LessThanOrEqualTo(variable Variable) Constraint {
-	return NewTermFromVariable(v).LessThanOrEqualToVariable(variable)
+func (v *Variable) LessThanOrEqualToVariable(variable *Variable) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToVariable(variable)
 }
 
-func (v *variable) LessThanOrEqualToTerm(term Term) Constraint {
-	return NewTermFromVariable(v).LessThanOrEqualTo(term)
+func (v *Variable) LessThanOrEqualToTerm(term Term) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToTerm(term)
 }
 
-func (v *variable) LessThanOrEqualToExpression(expression Expression) Constraint {
-	return NewTermFromVariable(v).LessThanOrEqualToExpression(expression)
+func (v *Variable) LessThanOrEqualToExpression(expression Expression) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToExpression(expression)
 }
 
-func (v *variable) GreaterThanOrEqualToConstant(constant float64) Constraint {
-	return NewTermFromVariable(v).GreaterThanOrEqualToConstant(constant)
+func (v *Variable) GreaterThanOrEqualToConstant(constant float64) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToConstant(constant)
 }
 
-func (v *variable) GreaterThanOrEqualTo(variable Variable) Constraint {
-	return NewTermFromVariable(v).GreaterThanOrEqualToVariable(variable)
+func (v *Variable) GreaterThanOrEqualToVariable(variable *Variable) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToVariable(variable)
 }
 
-func (v *variable) GreaterThanOrEqualToTerm(term Term) Constraint {
-	return NewTermFromVariable(v).GreaterThanOrEqualTo(term)
+func (v *Variable) GreaterThanOrEqualToTerm(term Term) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToTerm(term)
 }
 
-func (v *variable) GreaterThanOrEqualToExpression(expression Expression) Constraint {
-	return NewTermFromVariable(v).GreaterThanOrEqualToExpression(expression)
+func (v *Variable) GreaterThanOrEqualToExpression(expression Expression) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToExpression(expression)
 }
