@@ -11,11 +11,6 @@ type Solver struct {
 	artificialObjective *Row
 }
 
-type tag struct {
-	marker *Symbol
-	other  *Symbol
-}
-
 func NewSolver() *Solver {
 	return &Solver{
 		cns:       map[*Constraint]tag{},
