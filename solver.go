@@ -39,7 +39,7 @@ UnsatisfiableConstraint
 func (s *Solver) AddConstraint(constraint *Constraint) error {
 
 	if _, present := s.cns[constraint]; present {
-		return DuplicateConstraintException{}
+		return DuplicateConstraintException
 	}
 
 	row, tag := s.createRow(constraint)
@@ -91,7 +91,7 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 	} else {
 		row, present := s.GetMarkerLeavingRow(tag.marker)
 		if !present {
-			return InternalSolverError{"internal solver error"}
+			return InternalSolverError
 		}
 
 		//This looks wrong! changes made below
@@ -105,7 +105,7 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 			}
 		}
 		if leaving == nil {
-			return InternalSolverError{"internal solver error"}
+			return InternalSolverError
 		}
 
 		delete(s.rows, leaving)
@@ -182,7 +182,8 @@ func (s *Solver) GetMarkerLeavingRow(marker *Symbol) (*Row, bool) {
 
  */
 func (s *Solver) HasConstraint(constraint *Constraint) bool {
-	return false
+	_, present := s.cns[constraint]
+	return present
 }
 
 /* Add an edit variable to the solver.
@@ -200,23 +201,6 @@ BadRequiredStrength
 
 */
 func (s *Solver) AddEditVariable(variable *Variable, strength float64) error {
-
-	// if (edits.exists(variable)) {
-	// 	throw SolverError.DuplicateEditVariable;
-	// }
-
-	// strength = Strength.clamp(strength);
-
-	// if (strength == Strength.required) {
-	// 	throw SolverError.BadRequiredStrength;
-	// }
-
-	// var terms = new Array<Term>();
-	// terms.push(new Term(variable));
-	// var constraint = new Constraint(new Expression(terms), RelationalOperator.EQ, strength);
-	// addConstraint(constraint);
-	// var info = new EditInfo(constraint, constraints.get(constraint), 0.0);
-	// edits.set(variable, info);
 	return nil
 }
 
@@ -328,10 +312,10 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 		}
 	}
 
-	switch constraint.Op {
+	switch constraint.Operator {
 	case LE, GE:
 		coeff := -1.0
-		if constraint.Op == LE {
+		if constraint.Operator == LE {
 			coeff = 1.0
 		}
 		slack := NewSymbol(SLACK)
@@ -450,7 +434,7 @@ func (s *Solver) optimize(objective *Row) error {
 		// If no appropriate exit symbol was found, this indicates that
 		// the objective function is unbounded.
 		if exitSym == nil || exitRow == nil {
-			return InternalSolverError{"The objective is unbounded."}
+			return UnboundedObjectiveError
 		}
 		// pivot the entering symbol into the basis
 		delete(s.rows, exitSym)
@@ -482,7 +466,7 @@ func (s *Solver) dualOptimize() error {
 		if row != nil && row.Constant < 0.0 {
 			entering := s.objective.GetDualEnteringSymbol(row)
 			if entering.IsInvalid() {
-				return InternalSolverError{"internal solver error"}
+				return InternalSolverError
 			}
 			delete(s.rows, leaving)
 

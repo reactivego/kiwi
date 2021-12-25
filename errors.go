@@ -1,31 +1,17 @@
 package kiwi
 
-type DuplicateConstraintException struct{}
+type SolverException string
 
-func (DuplicateConstraintException) Error() string {
-	return "DuplicateConstraintException"
-}
+func (e SolverException) Error() string { return string(e) }
 
-type InternalSolverError struct {
-	msg string
-}
+const DuplicateConstraintException = SolverException("DuplicateConstraintException")
+const InternalSolverError = SolverException("internal solver error")
+const UnboundedObjectiveError = SolverException("The objective is unbounded.")
 
-func (e InternalSolverError) Error() string {
-	return e.msg
-}
+type UnsatisfiableConstraintException struct{ *Constraint }
 
-type UnsatisfiableConstraintException struct {
-	constraint *Constraint
-}
+func (UnsatisfiableConstraintException) Error() string { return "UnsatisfiableConstraintException" }
 
-func (e UnsatisfiableConstraintException) Error() string {
-	return "UnsatisfiableConstraintException"
-}
+type UnknownConstraintException struct{ *Constraint }
 
-type UnknownConstraintException struct {
-	constraint *Constraint
-}
-
-func (e UnknownConstraintException) Error() string {
-	return "UnknownConstraintException"
-}
+func (UnknownConstraintException) Error() string { return "UnknownConstraintException" }
