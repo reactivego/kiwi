@@ -108,10 +108,6 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 }
 
 func (s *Solver) removeConstraintEffects(constraint *Constraint, tag tag) {
-	if constraint == nil {
-		panic("constraint is nil")
-	}
-
 	if tag.marker.IsError() {
 		s.removeMarkerEffects(tag.marker, constraint.Strength)
 	} else if tag.other.IsError() {
