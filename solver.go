@@ -6,6 +6,7 @@ type Solver struct {
 	cns                 map[*Constraint]tag
 	rows                map[*Symbol]*Row
 	vars                map[*Variable]*Symbol
+	edits               map[*Variable]*edit
 	infeasibleRows      []*Symbol
 	objective           *Row
 	artificialObjective *Row
@@ -16,6 +17,7 @@ func NewSolver() *Solver {
 		cns:       map[*Constraint]tag{},
 		rows:      map[*Symbol]*Row{},
 		vars:      map[*Variable]*Symbol{},
+		edits:     map[*Variable]*edit{},
 		objective: NewRow(),
 	}
 }
@@ -186,6 +188,22 @@ BadRequiredStrength
 
 */
 func (s *Solver) AddEditVariable(variable *Variable, options ...ConstraintOption) error {
+	if _, present := s.edits[variable]; present {
+		return DuplicateEditVariable{variable}
+	}
+	constraint := variable.EqualsConstant(0.0)
+	for _, option := range options {
+		option(constraint)
+	}
+	if constraint.Strength == REQUIRED {
+		return BadRequiredStrength
+	}
+	s.AddConstraint(constraint)
+	s.edits[variable] = &edit{
+		tag:        s.cns[constraint],
+		constraint: constraint,
+		constant:   0.0,
+	}
 	return nil
 }
 
@@ -198,6 +216,12 @@ UnknownEditVariable
 
 */
 func (s *Solver) RemoveEditVariable(variable *Variable) error {
+	edit, present := s.edits[variable]
+	if !present {
+		return UnknownEditVariable{variable}
+	}
+	s.RemoveConstraint(edit.constraint)
+	delete(s.edits, variable)
 	return nil
 }
 
@@ -205,7 +229,8 @@ func (s *Solver) RemoveEditVariable(variable *Variable) error {
 
  */
 func (s *Solver) HasEditVariable(variable *Variable) bool {
-	return false
+	_, present := s.edits[variable]
+	return present
 }
 
 /* Suggest a value for the given edit variable.
@@ -222,6 +247,41 @@ UnknownEditVariable
 
 */
 func (s *Solver) SuggestValue(variable *Variable, value float64) error {
+	edit, present := s.edits[variable]
+	if !present {
+		return UnknownEditVariable{variable}
+	}
+	defer s.dualOptimize()
+	delta := value - edit.constant
+	edit.constant = value
+
+	// Check first if the positive error variable is basic.
+	row, present := s.rows[edit.tag.marker]
+	if present {
+		if row.Add(-delta) < 0.0 {
+			s.infeasibleRows = append(s.infeasibleRows, edit.tag.marker)
+		}
+		return nil
+	}
+
+	// Check next if the negative error variable is basic.
+	row, present = s.rows[edit.tag.other]
+	if present {
+		if row.Add(delta) < 0.0 {
+			s.infeasibleRows = append(s.infeasibleRows, edit.tag.other)
+		}
+		return nil
+	}
+
+	// Otherwise update each row where the error variables exist.
+	for sym, row := range s.rows {
+		coeff := row.CoefficientFor(edit.tag.marker)
+		if coeff != 0.0 && row.Add(delta*coeff) < 0.0 && !sym.IsExternal() {
+			s.infeasibleRows = append(s.infeasibleRows, sym)
+		}
+		return nil
+	}
+
 	return nil
 }
 
