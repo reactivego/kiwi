@@ -1,17 +1,27 @@
 package kiwi
 
-type SolverException string
+type SolverError string
 
-func (e SolverException) Error() string { return string(e) }
+func (e SolverError) Error() string { return string(e) }
 
-const DuplicateConstraintException = SolverException("DuplicateConstraintException")
-const InternalSolverError = SolverException("internal solver error")
-const UnboundedObjectiveError = SolverException("The objective is unbounded.")
+const DuplicateConstraintException = SolverError("Duplicate Constraint")
+const InternalSolverError = SolverError("Internal Solver Error")
+const UnboundedObjectiveError = SolverError("Objective is Unbounded")
+const BadRequiredStrength = SolverError("Bad Required Strength")
+const FailedToFindLeavingRow = SolverError("Failed to find Leaving Row")
 
 type UnsatisfiableConstraintException struct{ *Constraint }
 
-func (UnsatisfiableConstraintException) Error() string { return "UnsatisfiableConstraintException" }
+func (UnsatisfiableConstraintException) Error() string { return "Unsatisfiable Constraint" }
 
 type UnknownConstraintException struct{ *Constraint }
 
-func (UnknownConstraintException) Error() string { return "UnknownConstraintException" }
+func (UnknownConstraintException) Error() string { return "Unknown Constraint" }
+
+type UnknownEditVariable struct{ *Variable }
+
+func (UnknownEditVariable) Error() string { return "Unknown Edit Variable" }
+
+type DuplicateEditVariable struct{ *Variable }
+
+func (DuplicateEditVariable) Error() string { return "Duplicate Edit Variable" }
