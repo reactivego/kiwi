@@ -83,30 +83,22 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 	}
 
 	delete(s.cns, constraint)
+
+	// Remove the error effects from the objective function
+	// *before* pivoting, or substitutions into the objective
+	// will lead to incorrect solver results.
 	s.removeConstraintEffects(constraint, tag)
 
+	// If the marker is basic, simply drop the row. Otherwise,
+	// pivot the marker into the basis and then drop the row.
 	if _, present := s.rows[tag.marker]; present {
 		delete(s.rows, tag.marker)
 	} else {
-		row, present := s.getMarkerLeavingRow(tag.marker)
+		leaving, present := s.getMarkerLeavingRow(tag.marker)
 		if !present {
-			return InternalSolverError
+			return FailedToFindLeavingRow
 		}
-
-		//This looks wrong! changes made below
-		//Symbol leaving = tag.marker;
-		//rows.remove(tag.marker);
-
-		var leaving *Symbol
-		for s, v := range s.rows {
-			if v == row {
-				leaving = s
-			}
-		}
-		if leaving == nil {
-			return InternalSolverError
-		}
-
+		row := s.rows[leaving]
 		delete(s.rows, leaving)
 		row.SolveForPair(leaving, tag.marker)
 		s.substitute(tag.marker, row)
@@ -135,31 +127,31 @@ func (s *Solver) removeMarkerEffects(marker *Symbol, strength Strength) {
 	}
 }
 
-func (s *Solver) getMarkerLeavingRow(marker *Symbol) (*Row, bool) {
+func (s *Solver) getMarkerLeavingRow(marker *Symbol) (*Symbol, bool) {
 	dmax := math.MaxFloat64
 	r1 := dmax
 	r2 := dmax
 
-	var first, second, third *Row
+	var first, second, third *Symbol
 
-	for s, candidateRow := range s.rows {
+	for sym, candidateRow := range s.rows {
 		c := candidateRow.CoefficientFor(marker)
 		if c == 0.0 {
 			continue
 		}
-		if s.IsExternal() {
-			third = candidateRow
+		if sym.IsExternal() {
+			third = sym
 		} else if c < 0.0 {
 			r := -candidateRow.Constant / c
 			if r < r1 {
 				r1 = r
-				first = candidateRow
+				first = sym
 			}
 		} else {
 			r := candidateRow.Constant / c
 			if r < r2 {
 				r2 = r
-				second = candidateRow
+				second = sym
 			}
 		}
 	}
