@@ -109,12 +109,12 @@ func TestCasso1(t *testing.T) {
 		t.Error(err)
 	}
 	// x = 10.0 [WEAK]
-	err = solver.AddConstraint(x.EqualsConstant(10.0), WithStrength(WEAK))
+	err = solver.AddConstraint(x.EqualsConstant(10.0), Strength(WEAK))
 	if err != nil {
 		t.Error(err)
 	}
 	// y = 10.0 [WEAK]
-	err = solver.AddConstraint(y.EqualsConstant(10.0), WithStrength(WEAK))
+	err = solver.AddConstraint(y.EqualsConstant(10.0), Strength(WEAK))
 	if err != nil {
 		t.Error(err)
 	}
@@ -134,7 +134,7 @@ func TestAddDelete1(t *testing.T) {
 	x := NewVariable("x")
 	solver := NewSolver()
 
-	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0), WithStrength(WEAK))
+	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0), Strength(WEAK))
 	solver.UpdateVariables()
 
 	assertEqualsFloat64(t, x.Value, 100, "x =")
@@ -257,40 +257,42 @@ func TestStrength(t *testing.T) {
 	if REQUIRED != 1001001000 {
 		t.Errorf("REQUIRED expected: 1001001000 got: %0.f", REQUIRED)
 	}
-	if Required() != 1001001000 {
-		t.Errorf("Required expected: 1001001000 got: %0.f", Required())
-	}
 	if STRONG != 1000000 {
 		t.Errorf("STRONG expected:1000000 got: %0.f", STRONG)
-	}
-	if Strong(1) != 1000000 {
-		t.Errorf("Strong(1) expected:1000000 got: %0.f", Strong(1))
-	}
-	if Strong(321) != 321000000 {
-		t.Errorf("Strong(321) expected:32100000 got: %0.f", Strong(321))
 	}
 	if MEDIUM != 1000 {
 		t.Errorf("MEDIUM expected: 1000 got: %0.f", MEDIUM)
 	}
-	if Medium(1) != 1000 {
-		t.Errorf("Medium(1) expected: 1000 got: %0.f", Medium(1))
-	}
-	if Medium(321) != 321000 {
-		t.Errorf("Medium(321) expected: 321000 got: %0.f", Medium(321))
-	}
 	if WEAK != 1 {
 		t.Errorf("WEAK expected: 1 got: %0.f", WEAK)
-	}
-	if Weak(1) != 1 {
-		t.Errorf("Weak(1) expected: 1 got: %0.f", Weak(1))
-	}
-	if Weak(321) != 321 {
-		t.Errorf("Weak(321) expected: 321 got: %0.f", Weak(1))
 	}
 	if OPTIONAL != 0 {
 		t.Errorf("OPTIONAL expected: 0 got: %0.f", OPTIONAL)
 	}
-	if Optional() != 0 {
-		t.Errorf("Optional() expected: 0 got: %0.f", Optional())
+
+	c := &Constraint{}
+	if RequiredStrength()(c); c.Strength != 1001001000 {
+		t.Errorf("Required expected: 1001001000 got: %0.f", c.Strength)
+	}
+	if StrongStrength(1)(c); c.Strength != 1000000 {
+		t.Errorf("Strong(1) expected:1000000 got: %0.f", c.Strength)
+	}
+	if StrongStrength(321)(c); c.Strength != 321000000 {
+		t.Errorf("Strong(321) expected:32100000 got: %0.f", c.Strength)
+	}
+	if MediumStrength(1)(c); c.Strength != 1000 {
+		t.Errorf("Medium(1) expected: 1000 got: %0.f", c.Strength)
+	}
+	if MediumStrength(321)(c); c.Strength != 321000 {
+		t.Errorf("Medium(321) expected: 321000 got: %0.f", c.Strength)
+	}
+	if WeakStrength(1)(c); c.Strength != 1 {
+		t.Errorf("Weak(1) expected: 1 got: %0.f", c.Strength)
+	}
+	if WeakStrength(321)(c); c.Strength != 321 {
+		t.Errorf("Weak(321) expected: 321 got: %0.f", c.Strength)
+	}
+	if OptionalStrength()(c); c.Strength != 0 {
+		t.Errorf("Optional() expected: 0 got: %0.f", c.Strength)
 	}
 }

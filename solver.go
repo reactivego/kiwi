@@ -32,7 +32,6 @@ UnsatisfiableConstraint
 
 */
 func (s *Solver) AddConstraint(constraint *Constraint, options ...ConstraintOption) error {
-
 	if s.HasConstraint(constraint) {
 		return DuplicateConstraintException
 	}
@@ -115,7 +114,7 @@ func (s *Solver) removeConstraintEffects(constraint *Constraint, tag tag) {
 	}
 }
 
-func (s *Solver) removeMarkerEffects(marker *Symbol, strength Strength) {
+func (s *Solver) removeMarkerEffects(marker *Symbol, strength float64) {
 	if row, present := s.rows[marker]; present {
 		s.objective.InsertRowWithCoefficient(row, float64(-strength))
 	} else {
@@ -186,7 +185,7 @@ BadRequiredStrength
 	The given strength is >= required.
 
 */
-func (s *Solver) AddEditVariable(variable *Variable, strength float64) error {
+func (s *Solver) AddEditVariable(variable *Variable, options ...ConstraintOption) error {
 	return nil
 }
 

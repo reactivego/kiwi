@@ -3,16 +3,10 @@ package kiwi
 type Constraint struct {
 	Expression Expression
 	Operator   Operator
-	Strength   Strength
+	Strength   float64
 }
 
 type ConstraintOption func(*Constraint)
-
-func WithStrength(strength Strength) ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = strength.Clip()
-	}
-}
 
 func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *Constraint {
 	// reduce: c + pv + qv + rw -> c + (p+q)v + rw
