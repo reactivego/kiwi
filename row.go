@@ -4,7 +4,7 @@ import "math"
 
 type Row struct {
 	Constant float64
-	Cells    map[*Symbol]float64
+	Cells    map[*symbol]float64
 }
 
 type RowOption func(*Row)
@@ -16,7 +16,7 @@ func WithConstant(constant float64) RowOption {
 }
 
 func NewRow(options ...RowOption) *Row {
-	row := &Row{Cells: map[*Symbol]float64{}}
+	row := &Row{Cells: map[*symbol]float64{}}
 	for _, option := range options {
 		option(row)
 	}
@@ -25,7 +25,7 @@ func NewRow(options ...RowOption) *Row {
 
 func (r *Row) Copy() *Row {
 	// Maps are reference types, we can't just reference the other cell from the other row.
-	cells := make(map[*Symbol]float64)
+	cells := make(map[*symbol]float64)
 	for s, c := range r.Cells {
 		cells[s] = c
 	}
@@ -49,7 +49,7 @@ func (r *Row) Add(value float64) float64 {
  * added to the existing coefficient. If the resulting coefficient
  * is zero, the symbol will be removed from the row
  */
-func (r *Row) InsertSymbolWithCoefficient(sym *Symbol, coeff float64) {
+func (r *Row) InsertSymbolWithCoefficient(sym *symbol, coeff float64) {
 	coeff += r.Cells[sym]
 	if NearZero(coeff) {
 		delete(r.Cells, sym)
@@ -65,7 +65,7 @@ func (r *Row) InsertSymbolWithCoefficient(sym *Symbol, coeff float64) {
  * added to the existing coefficient. If the resulting coefficient
  * is zero, the symbol will be removed from the row
  */
-func (r *Row) InsertSymbol(sym *Symbol) {
+func (r *Row) InsertSymbol(sym *symbol) {
 	r.InsertSymbolWithCoefficient(sym, 1.0)
 }
 
@@ -105,7 +105,7 @@ func (r *Row) InsertRow(other *Row) {
 /**
  * Remove the given symbol from the row.
  */
-func (r *Row) RemoveSymbol(sym *Symbol) {
+func (r *Row) RemoveSymbol(sym *symbol) {
 	delete(r.Cells, sym)
 }
 
@@ -114,7 +114,7 @@ func (r *Row) RemoveSymbol(sym *Symbol) {
  */
 func (r *Row) ReverseSign() {
 	r.Constant = -r.Constant
-	cells := make(map[*Symbol]float64)
+	cells := make(map[*symbol]float64)
 	for s, c := range r.Cells {
 		cells[s] = -c
 	}
@@ -132,26 +132,26 @@ func (r *Row) ReverseSign() {
  * 2) A negative slack or error tag variable.
  * If a subject cannot be found, an invalid symbol will be returned.
  */
-func (r *Row) ChooseSubject(tag tag) *Symbol {
+func (r *Row) ChooseSubject(tag tag) *symbol {
 	for sym := range r.Cells {
-		if sym.IsExternal() {
+		if sym.is(EXTERNAL) {
 			return sym
 		}
 	}
 
-	if tag.marker.IsSlack() || tag.marker.IsError() {
+	if tag.marker.is(SLACK) || tag.marker.is(ERROR) {
 		if r.CoefficientFor(tag.marker) < 0.0 {
 			return tag.marker
 		}
 	}
 
-	if tag.other != nil && (tag.other.IsSlack() || tag.other.IsError()) {
+	if tag.other != nil && (tag.other.is(SLACK) || tag.other.is(ERROR)) {
 		if r.CoefficientFor(tag.other) < 0.0 {
 			return tag.other
 		}
 	}
 
-	return NewInvalidSymbol()
+	return newSymbol(INVALID)
 }
 
 /**
@@ -159,7 +159,7 @@ func (r *Row) ChooseSubject(tag tag) *Symbol {
  */
 func (r *Row) AllDummies() bool {
 	for sym := range r.Cells {
-		if !sym.IsDummy() {
+		if !sym.is(DUMMY) {
 			return false
 		}
 	}
@@ -178,11 +178,11 @@ func (r *Row) AllDummies() bool {
  *
  * @param symbol
  */
-func (r *Row) SolveFor(sym *Symbol) {
+func (r *Row) SolveFor(sym *symbol) {
 	coeff := -1.0 / r.Cells[sym]
 	delete(r.Cells, sym)
 	r.Constant *= coeff
-	cells := make(map[*Symbol]float64)
+	cells := make(map[*symbol]float64)
 	for s, c := range r.Cells {
 		cells[s] = c * coeff
 	}
@@ -202,7 +202,7 @@ func (r *Row) SolveFor(sym *Symbol) {
  * @param lhs
  * @param rhs
  */
-func (r *Row) SolveForPair(lhs, rhs *Symbol) {
+func (r *Row) SolveForPair(lhs, rhs *symbol) {
 	r.InsertSymbolWithCoefficient(lhs, -1.0)
 	r.SolveFor(rhs)
 }
@@ -214,7 +214,7 @@ func (r *Row) SolveForPair(lhs, rhs *Symbol) {
  *
  * @return
  */
-func (r Row) CoefficientFor(sym *Symbol) float64 {
+func (r Row) CoefficientFor(sym *symbol) float64 {
 	if coeff, present := r.Cells[sym]; present {
 		return coeff
 	} else {
@@ -230,7 +230,7 @@ func (r Row) CoefficientFor(sym *Symbol) float64 {
  * expression 3 * a * y + a * c + b.
  * If the symbol does not exist in the row, this is a no-op.
  */
-func (r *Row) Substitute(sym *Symbol, row *Row) {
+func (r *Row) Substitute(sym *symbol, row *Row) {
 	if coeff, present := r.Cells[sym]; present {
 		delete(r.Cells, sym)
 		r.InsertRowWithCoefficient(row, coeff)
@@ -242,13 +242,13 @@ func (r *Row) Substitute(sym *Symbol, row *Row) {
  *
  * If no such symbol is present, and Invalid symbol will be returned.
  */
-func (r *Row) AnyPivotableSymbol() *Symbol {
+func (r *Row) AnyPivotableSymbol() *symbol {
 	for sym := range r.Cells {
-		if sym.IsSlack() || sym.IsError() {
+		if sym.is(SLACK) || sym.is(ERROR) {
 			return sym
 		}
 	}
-	return NewInvalidSymbol()
+	return newSymbol(INVALID)
 }
 
 /**
@@ -259,14 +259,14 @@ func (r *Row) AnyPivotableSymbol() *Symbol {
  * the criteria, it means the objective function is at a minimum, and an
  * invalid symbol is returned.
  */
-func (r *Row) GetEnteringSymbol() *Symbol {
+func (r *Row) GetEnteringSymbol() *symbol {
 	objective := r
 	for sym, coeff := range objective.Cells {
-		if !sym.IsDummy() && coeff < 0.0 {
+		if !sym.is(DUMMY) && coeff < 0.0 {
 			return sym
 		}
 	}
-	return NewInvalidSymbol()
+	return newSymbol(INVALID)
 }
 
 /**
@@ -278,12 +278,12 @@ func (r *Row) GetEnteringSymbol() *Symbol {
  * If no symbol is found which meats the criteria, an invalid symbol
  * is returned.
  */
-func (r *Row) GetDualEnteringSymbol(row *Row) *Symbol {
+func (r *Row) GetDualEnteringSymbol(row *Row) *symbol {
 	objective := r
 	ratio := math.MaxFloat64
-	entering := NewInvalidSymbol()
+	entering := newSymbol(INVALID)
 	for sym, coeff := range row.Cells {
-		if !sym.IsDummy() && coeff > 0.0 {
+		if !sym.is(DUMMY) && coeff > 0.0 {
 			r := objective.CoefficientFor(sym) / coeff
 			if r < ratio {
 				ratio = r

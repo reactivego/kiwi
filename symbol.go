@@ -1,39 +1,19 @@
 package kiwi
 
-type Symbol int
+type symbol int
 
 const (
-	INVALID Symbol = iota
+	INVALID symbol = iota
 	EXTERNAL
 	SLACK
 	ERROR
 	DUMMY
 )
 
-func NewSymbol(symbol Symbol) *Symbol {
-	return &symbol
+func newSymbol(s symbol) *symbol {
+	return &s
 }
 
-func NewInvalidSymbol() *Symbol {
-	return NewSymbol(INVALID)
-}
-
-func (s Symbol) IsInvalid() bool {
-	return s == INVALID
-}
-
-func (s Symbol) IsExternal() bool {
-	return s == EXTERNAL
-}
-
-func (s Symbol) IsSlack() bool {
-	return s == SLACK
-}
-
-func (s Symbol) IsError() bool {
-	return s == ERROR
-}
-
-func (s Symbol) IsDummy() bool {
-	return s == DUMMY
+func (s symbol) is(kind symbol) bool {
+	return s == kind
 }

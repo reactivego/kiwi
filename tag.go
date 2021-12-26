@@ -1,3 +1,3 @@
 package kiwi
 
-type tag struct{ marker, other *Symbol }
+type tag struct{ marker, other *symbol }

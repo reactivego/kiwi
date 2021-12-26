@@ -4,10 +4,10 @@ import "math"
 
 type Solver struct {
 	cns                 map[*Constraint]tag
-	rows                map[*Symbol]*Row
-	vars                map[*Variable]*Symbol
+	rows                map[*symbol]*Row
+	vars                map[*Variable]*symbol
 	edits               map[*Variable]*edit
-	infeasibleRows      []*Symbol
+	infeasibleRows      []*symbol
 	objective           *Row
 	artificialObjective *Row
 }
@@ -15,8 +15,8 @@ type Solver struct {
 func NewSolver() *Solver {
 	return &Solver{
 		cns:       map[*Constraint]tag{},
-		rows:      map[*Symbol]*Row{},
-		vars:      map[*Variable]*Symbol{},
+		rows:      map[*symbol]*Row{},
+		vars:      map[*Variable]*symbol{},
 		edits:     map[*Variable]*edit{},
 		objective: NewRow(),
 	}
@@ -45,7 +45,7 @@ func (s *Solver) AddConstraint(constraint *Constraint, options ...ConstraintOpti
 	row, tag := s.createRow(constraint)
 	subject := row.ChooseSubject(tag)
 
-	if subject.IsInvalid() && row.AllDummies() {
+	if subject.is(INVALID) && row.AllDummies() {
 		if !NearZero(row.Constant) {
 			return UnsatisfiableConstraintException{constraint}
 		} else {
@@ -54,7 +54,7 @@ func (s *Solver) AddConstraint(constraint *Constraint, options ...ConstraintOpti
 
 	}
 
-	if subject.IsInvalid() {
+	if subject.is(INVALID) {
 		if !s.addWithArtificialVariable(row) {
 			return UnsatisfiableConstraintException{constraint}
 		}
@@ -109,14 +109,14 @@ func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 }
 
 func (s *Solver) removeConstraintEffects(constraint *Constraint, tag tag) {
-	if tag.marker.IsError() {
+	if tag.marker.is(ERROR) {
 		s.removeMarkerEffects(tag.marker, constraint.Strength)
-	} else if tag.other.IsError() {
+	} else if tag.other.is(ERROR) {
 		s.removeMarkerEffects(tag.other, constraint.Strength)
 	}
 }
 
-func (s *Solver) removeMarkerEffects(marker *Symbol, strength float64) {
+func (s *Solver) removeMarkerEffects(marker *symbol, strength float64) {
 	if row, present := s.rows[marker]; present {
 		s.objective.InsertRowWithCoefficient(row, float64(-strength))
 	} else {
@@ -124,19 +124,19 @@ func (s *Solver) removeMarkerEffects(marker *Symbol, strength float64) {
 	}
 }
 
-func (s *Solver) getMarkerLeavingRow(marker *Symbol) (*Symbol, bool) {
+func (s *Solver) getMarkerLeavingRow(marker *symbol) (*symbol, bool) {
 	dmax := math.MaxFloat64
 	r1 := dmax
 	r2 := dmax
 
-	var first, second, third *Symbol
+	var first, second, third *symbol
 
 	for sym, candidateRow := range s.rows {
 		c := candidateRow.CoefficientFor(marker)
 		if c == 0.0 {
 			continue
 		}
-		if sym.IsExternal() {
+		if sym.is(EXTERNAL) {
 			third = sym
 		} else if c < 0.0 {
 			r := -candidateRow.Constant / c
@@ -276,7 +276,7 @@ func (s *Solver) SuggestValue(variable *Variable, value float64) error {
 	// Otherwise update each row where the error variables exist.
 	for sym, row := range s.rows {
 		coeff := row.CoefficientFor(edit.tag.marker)
-		if coeff != 0.0 && row.Add(delta*coeff) < 0.0 && !sym.IsExternal() {
+		if coeff != 0.0 && row.Add(delta*coeff) < 0.0 && !sym.is(EXTERNAL) {
 			s.infeasibleRows = append(s.infeasibleRows, sym)
 		}
 		return nil
@@ -346,7 +346,7 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 		variable := term.Variable
 		sym, present := s.vars[variable]
 		if !present {
-			sym = NewSymbol(EXTERNAL)
+			sym = newSymbol(EXTERNAL)
 			s.vars[variable] = sym
 		}
 
@@ -363,19 +363,19 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 		if constraint.Operator == LE {
 			coeff = 1.0
 		}
-		slack := NewSymbol(SLACK)
+		slack := newSymbol(SLACK)
 		tag.marker = slack
 		row.InsertSymbolWithCoefficient(slack, coeff)
 		if constraint.Strength < REQUIRED {
-			error := NewSymbol(ERROR)
+			error := newSymbol(ERROR)
 			tag.other = error
 			row.InsertSymbolWithCoefficient(error, -coeff)
 			s.objective.InsertSymbolWithCoefficient(error, float64(constraint.Strength))
 		}
 	case EQ:
 		if constraint.Strength < REQUIRED {
-			errplus := NewSymbol(ERROR)
-			errminus := NewSymbol(ERROR)
+			errplus := newSymbol(ERROR)
+			errminus := newSymbol(ERROR)
 			tag.marker = errplus
 			tag.other = errminus
 			row.InsertSymbolWithCoefficient(errplus, -1.0) // v = eplus - eminus
@@ -383,7 +383,7 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 			s.objective.InsertSymbolWithCoefficient(errplus, float64(constraint.Strength))
 			s.objective.InsertSymbolWithCoefficient(errminus, float64(constraint.Strength))
 		} else {
-			dummy := NewSymbol(DUMMY)
+			dummy := newSymbol(DUMMY)
 			tag.marker = dummy
 			row.InsertSymbol(dummy)
 		}
@@ -396,7 +396,7 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 
 	// Ensure the tag.other symbol is not nil
 	if tag.other == nil {
-		tag.other = NewInvalidSymbol()
+		tag.other = newSymbol(INVALID)
 	}
 
 	return
@@ -409,7 +409,7 @@ func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
  */
 func (s *Solver) addWithArtificialVariable(row *Row) bool {
 	// Create and add the artificial variable to the tableau
-	art := NewSymbol(SLACK)
+	art := newSymbol(SLACK)
 	s.rows[art] = row.Copy()
 
 	// Optimize the artificial objective. This is successful only
@@ -427,7 +427,7 @@ func (s *Solver) addWithArtificialVariable(row *Row) bool {
 			return success
 		}
 		entering := rowptr.AnyPivotableSymbol()
-		if entering.IsInvalid() {
+		if entering.is(INVALID) {
 			return false // unsatisfiable (will this ever happen?)
 		}
 		rowptr.SolveForPair(art, entering)
@@ -454,16 +454,16 @@ func (s *Solver) addWithArtificialVariable(row *Row) bool {
 func (s *Solver) optimize(objective *Row) error {
 	for {
 		enterSym := objective.GetEnteringSymbol()
-		if enterSym.IsInvalid() {
+		if enterSym.is(INVALID) {
 			return nil
 		}
 
 		// Compute the row which holds the exit symbol for a pivot.
 		ratio := math.MaxFloat64
-		var exitSym *Symbol
+		var exitSym *symbol
 		var exitRow *Row
 		for sym, row := range s.rows {
-			if !sym.IsExternal() {
+			if !sym.is(EXTERNAL) {
 				temp := row.CoefficientFor(enterSym)
 				if temp < 0.0 {
 					tempRatio := -row.Constant / temp
@@ -510,7 +510,7 @@ func (s *Solver) dualOptimize() error {
 
 		if row != nil && row.Constant < 0.0 {
 			entering := s.objective.GetDualEnteringSymbol(row)
-			if entering.IsInvalid() {
+			if entering.is(INVALID) {
 				return InternalSolverError
 			}
 			delete(s.rows, leaving)
@@ -530,10 +530,10 @@ func (s *Solver) dualOptimize() error {
  * This method will substitute all instances of the parametric symbol
  * in the tableau and the objective function with the given row.
  */
-func (s *Solver) substitute(sym *Symbol, row *Row) {
+func (s *Solver) substitute(sym *symbol, row *Row) {
 	for isym, irow := range s.rows {
 		irow.Substitute(sym, row)
-		if !isym.IsExternal() && irow.Constant < 0.0 {
+		if !isym.is(EXTERNAL) && irow.Constant < 0.0 {
 			s.infeasibleRows = append(s.infeasibleRows, isym)
 		}
 	}
