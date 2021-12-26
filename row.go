@@ -7,12 +7,20 @@ type Row struct {
 	Cells    map[*Symbol]float64
 }
 
-func NewRow() *Row {
-	return &Row{Cells: map[*Symbol]float64{}}
+type RowOption func(*Row)
+
+func WithConstant(constant float64) RowOption {
+	return func(row *Row) {
+		row.Constant = constant
+	}
 }
 
-func NewRowWithConstant(constant float64) *Row {
-	return &Row{Constant: constant, Cells: make(map[*Symbol]float64)}
+func NewRow(options ...RowOption) *Row {
+	row := &Row{Cells: map[*Symbol]float64{}}
+	for _, option := range options {
+		option(row)
+	}
+	return row
 }
 
 func (r *Row) Copy() *Row {
@@ -29,7 +37,7 @@ func (r *Row) Copy() *Row {
  *
  * @return The new value of the constant
  */
-func (r *Row) add(value float64) float64 {
+func (r *Row) Add(value float64) float64 {
 	r.Constant += value
 	return r.Constant
 }

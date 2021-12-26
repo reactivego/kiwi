@@ -290,7 +290,7 @@ func (s *Solver) Dump() {
  */
 func (s *Solver) createRow(constraint *Constraint) (row *Row, tag tag) {
 	expression := constraint.Expression
-	row = NewRowWithConstant(expression.Constant)
+	row = NewRow(WithConstant(expression.Constant))
 	for _, term := range expression.Terms {
 		if NearZero(term.Coefficient) {
 			continue
