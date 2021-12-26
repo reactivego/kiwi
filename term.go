@@ -5,6 +5,8 @@ type Term struct {
 	Coefficient float64
 }
 
+var _ Constrainer = Term{}
+
 func (t Term) GetValue() float64 {
 	return t.Coefficient * t.Variable.Value
 }
