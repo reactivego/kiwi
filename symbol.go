@@ -1,19 +1,19 @@
 package kiwi
 
-type symbol int
+import "fmt"
 
-const (
-	INVALID symbol = iota
-	EXTERNAL
-	SLACK
-	ERROR
-	DUMMY
-)
-
-func newSymbol(s symbol) *symbol {
-	return &s
+type symbol struct {
+	kind
+	id int
 }
 
-func (s symbol) is(kind symbol) bool {
-	return s == kind
+var _sid = 0
+
+func newSymbol(k kind) *symbol {
+	_sid++
+	return &symbol{k, _sid}
+}
+
+func (s symbol) String() string {
+	return fmt.Sprintf("%v%d", s.kind, s.id)
 }

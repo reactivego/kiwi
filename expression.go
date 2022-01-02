@@ -1,5 +1,10 @@
 package kiwi
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Expression struct {
 	Terms    []Term
 	Constant float64
@@ -103,4 +108,13 @@ func (e Expression) GreaterThanOrEqualToTerm(term Term) *Constraint {
 
 func (e Expression) GreaterThanOrEqualToExpression(expression Expression) *Constraint {
 	return NewConstraint(e.AddExpression(expression.Negate()), GE)
+}
+
+func (e Expression) String() string {
+	var factors []string
+	for _, t := range e.Terms {
+		factors = append(factors, fmt.Sprint(t))
+	}
+	factors = append(factors, fmt.Sprint(e.Constant))
+	return strings.Join(factors, " + ")
 }

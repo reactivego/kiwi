@@ -1,5 +1,7 @@
 package kiwi
 
+import "fmt"
+
 type Term struct {
 	Variable    *Variable
 	Coefficient float64
@@ -89,4 +91,8 @@ func (t Term) GreaterThanOrEqualToTerm(term Term) *Constraint {
 
 func (t Term) GreaterThanOrEqualToExpression(expression Expression) *Constraint {
 	return NewConstraint(t.AddExpression(expression.Negate()), GE)
+}
+
+func (t Term) String() string {
+	return fmt.Sprint(t.Coefficient, " * ", t.Variable)
 }

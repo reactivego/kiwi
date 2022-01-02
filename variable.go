@@ -79,6 +79,7 @@ func (v *Variable) GreaterThanOrEqualToTerm(term Term) *Constraint {
 	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToTerm(term)
 }
 
-func (v *Variable) GreaterThanOrEqualToExpression(expression Expression) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToExpression(expression)
+
+func (v *Variable) String() string {
+	return v.Name
 }

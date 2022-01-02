@@ -1,6 +1,10 @@
 package kiwi
 
-import "math"
+import (
+	"fmt"
+	"math"
+	"strings"
+)
 
 type Solver struct {
 	cns                 map[*Constraint]tag
@@ -343,13 +347,6 @@ func (s *Solver) Reset() {
 }
 
 /*
-Dump dumps a representation of the solver internals to stdout.
-*/
-func (s *Solver) Dump() {
-
-}
-
-/*
 createRow createRow creates a new row object for the given constraint.
 
  The terms in the constraint will be converted to cells in the row.
@@ -578,4 +575,31 @@ func (s *Solver) substitute(sym *symbol, other *row) {
 	if s.artificialObjective != nil {
 		s.artificialObjective.substitute(sym, other)
 	}
+}
+
+func (s Solver) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("Objective\n---------\n")
+	sb.WriteString(fmt.Sprintln(s.objective))
+	sb.WriteString("\nTableau\n-------\n")
+	for s, r := range s.rows {
+		sb.WriteString(fmt.Sprintln(s, "|", r))
+	}
+	sb.WriteString("\nInfeasible\n----------\n")
+	for _, s := range s.infeasibleRows {
+		sb.WriteString(fmt.Sprintln(s))
+	}
+	sb.WriteString("\nVariables\n---------\n")
+	for v, s := range s.vars {
+		sb.WriteString(fmt.Sprintln(v, " = ", s))
+	}
+	sb.WriteString("\nEdit Variables\n--------------\n")
+	for v := range s.edits {
+		sb.WriteString(fmt.Sprintln(v))
+	}
+	sb.WriteString("\nConstraints\n-----------\n")
+	for v := range s.cns {
+		sb.WriteString(fmt.Sprintln(v))
+	}
+	return sb.String()
 }

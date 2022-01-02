@@ -1,6 +1,9 @@
 package kiwi
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 type Constraint struct {
 	Expression Expression
@@ -33,4 +36,17 @@ func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *C
 		opt(c)
 	}
 	return c
+}
+
+func (c *Constraint) String() string {
+	op := " ??   "
+	switch c.Operator {
+	case LE:
+		op = " <= 0 "
+	case GE:
+		op = " >= 0 "
+	case EQ:
+		op = " == 0 "
+	}
+	return fmt.Sprint(c.Expression, op, "| strength = ", c.Strength)
 }
