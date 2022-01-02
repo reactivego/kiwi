@@ -189,7 +189,7 @@ func TestInconsistent1(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected err != nil, got err == nil")
 	}
-	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
+	if _, typematch := err.(UnsatisfiableConstraint); !typematch {
 		t.Errorf("expected typematch == true got false")
 	}
 
@@ -208,7 +208,7 @@ func TestInconsistent2(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected err != nil, got err == nil")
 	}
-	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
+	if _, typematch := err.(UnsatisfiableConstraint); !typematch {
 		t.Errorf("expected UnsatisfiableConstraintException got something else")
 	}
 
@@ -246,7 +246,7 @@ func TestInconsistent3(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected err != nil, got err == nil")
 	}
-	if _, typematch := err.(UnsatisfiableConstraintException); !typematch {
+	if _, typematch := err.(UnsatisfiableConstraint); !typematch {
 		t.Errorf("expected UnsatisfiableConstraintException got something else")
 	}
 

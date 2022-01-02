@@ -22,41 +22,56 @@ func NewSolver() *Solver {
 	}
 }
 
-/* Add a constraint to the solver.
+/*
+AddConstraint adds a constraint to the solver.
 
 Returns
-------
-DuplicateConstraint
-	The given constraint has already been added to the solver.
 
-UnsatisfiableConstraint
-	The given constraint is required and cannot be satisfied.
-
+	DuplicateConstraint
+The given constraint has already been added to the solver.
+	UnsatisfiableConstraint
+The given constraint is required and cannot be satisfied.
 */
 func (s *Solver) AddConstraint(constraint *Constraint, options ...ConstraintOption) error {
-	if s.HasConstraint(constraint) {
-		return DuplicateConstraintException
+	_, present := s.cns[constraint]
+	if present {
+		return DuplicateConstraint{constraint}
 	}
 
 	for _, option := range options {
 		option(constraint)
 	}
 
+	// Creating a row causes symbols to be reserved for the variables
+	// in the constraint. If this method exits with an exception,
+	// then its possible those variables will linger in the var map.
+	// Since its likely that those variables will be used in other
+	// constraints and since exceptional conditions are uncommon,
+	// i'm not too worried about aggressive cleanup of the var map.
 	row, tag := s.createRow(constraint)
 	subject := row.chooseSubject(tag)
 
+	// If chooseSubject could not find a valid entering symbol, one
+	// last option is available if the entire row is composed of
+	// dummy variables. If the constant of the row is zero, then
+	// this represents redundant constraints and the new dummy
+	// marker can enter the basis. If the constant is non-zero,
+	// then it represents an unsatisfiable constraint.
 	if subject.is(INVALID) && row.allDummies() {
 		if !NearZero(row.constant) {
-			return UnsatisfiableConstraintException{constraint}
+			return UnsatisfiableConstraint{constraint}
 		} else {
 			subject = tag.marker
 		}
 
 	}
 
+	// If an entering symbol still isn't found, then the row must
+	// be added using an artificial variable. If that fails, then
+	// the row represents an unsatisfiable constraint.
 	if subject.is(INVALID) {
 		if !s.addWithArtificialVariable(row) {
-			return UnsatisfiableConstraintException{constraint}
+			return UnsatisfiableConstraint{constraint}
 		}
 	} else {
 		row.solveFor(subject)
@@ -66,21 +81,24 @@ func (s *Solver) AddConstraint(constraint *Constraint, options ...ConstraintOpti
 
 	s.cns[constraint] = tag
 
+	// Optimizing after each constraint is added performs less
+	// aggregate work due to a smaller average system size. It
+	// also ensures the solver remains in a consistent state.
 	return s.optimize(s.objective)
 }
 
-/* Remove a constraint from the solver.
+/*
+RemoveConstraint removes a constraint from the solver.
 
 Returns
-------
-UnknownConstraint
-	The given constraint has not been added to the solver.
 
+	UnknownConstraint
+The given constraint has not been added to the solver.
 */
 func (s *Solver) RemoveConstraint(constraint *Constraint) error {
 	tag, present := s.cns[constraint]
 	if !present {
-		return UnknownConstraintException{constraint}
+		return UnknownConstraint{constraint}
 	}
 
 	delete(s.cns, constraint)
@@ -165,27 +183,26 @@ func (s *Solver) getMarkerLeavingRow(marker *symbol) (*symbol, bool) {
 	return nil, false
 }
 
-/* Test whether a constraint has been added to the solver.
-
- */
+/*
+HasConstraint tests whether a constraint has been added to the solver.
+*/
 func (s *Solver) HasConstraint(constraint *Constraint) bool {
 	_, present := s.cns[constraint]
 	return present
 }
 
-/* Add an edit variable to the solver.
+/*
+AddEditVariable adds an edit variable to the solver.
 
 This method should be called before the `suggestValue` method is
 used to supply a suggested value for the given edit variable.
 
 Returns
-------
-DuplicateEditVariable
-	The given edit variable has already been added to the solver.
 
-BadRequiredStrength
-	The given strength is >= required.
-
+	DuplicateEditVariable
+The given edit variable has already been added to the solver.
+	BadRequiredStrength
+The given strength is >= required.
 */
 func (s *Solver) AddEditVariable(variable *Variable, options ...ConstraintOption) error {
 	if _, present := s.edits[variable]; present {
@@ -207,13 +224,13 @@ func (s *Solver) AddEditVariable(variable *Variable, options ...ConstraintOption
 	return nil
 }
 
-/* Remove an edit variable from the solver.
+/*
+RemoveEditVariable removes an edit variable from the solver.
 
 Returns
-------
-UnknownEditVariable
-	The given edit variable has not been added to the solver.
 
+	UnknownEditVariable
+The given edit variable has not been added to the solver.
 */
 func (s *Solver) RemoveEditVariable(variable *Variable) error {
 	edit, present := s.edits[variable]
@@ -225,15 +242,16 @@ func (s *Solver) RemoveEditVariable(variable *Variable) error {
 	return nil
 }
 
-/* Test whether an edit variable has been added to the solver.
-
- */
+/*
+HasEditVariable tests whether an edit variable has been added to the solver.
+*/
 func (s *Solver) HasEditVariable(variable *Variable) bool {
 	_, present := s.edits[variable]
 	return present
 }
 
-/* Suggest a value for the given edit variable.
+/*
+SuggestValue suggests a value for the given edit variable.
 
 This method should be used after an edit variable as been added to
 the solver in order to suggest the value for that variable. After
@@ -241,10 +259,9 @@ all suggestions have been made, the `solve` method can be used to
 update the values of all variables.
 
 Returns
-------
-UnknownEditVariable
-	The given edit variable has not been added to the solver.
 
+	UnknownEditVariable
+The given edit variable has not been added to the solver.
 */
 func (s *Solver) SuggestValue(variable *Variable, value float64) error {
 	edit, present := s.edits[variable]
@@ -285,9 +302,9 @@ func (s *Solver) SuggestValue(variable *Variable, value float64) error {
 	return nil
 }
 
-/* Update the values of the external solver variables.
-
- */
+/*
+UpdateVariables updates the values of the external solver variables.
+*/
 func (s *Solver) UpdateVariables() {
 	for variable, symbol := range s.vars {
 		if row, present := s.rows[symbol]; present {
@@ -298,43 +315,43 @@ func (s *Solver) UpdateVariables() {
 	}
 }
 
-/* Reset the solver to the empty starting condition.
+/*
+Reset resets the solver to the empty starting condition.
 
 This method resets the internal solver state to the empty starting
 condition, as if no constraints or edit variables have been added.
 This can be faster than deleting the solver and creating a new one
 when the entire system must change, since it can avoid unecessary
 heap (de)allocations.
-
 */
 func (s *Solver) Reset() {
 
 }
 
-/* Dump a representation of the solver internals to stdout.
-
- */
+/*
+Dump dumps a representation of the solver internals to stdout.
+*/
 func (s *Solver) Dump() {
 
 }
 
-/**
- * createRow creates a new row object for the given constraint.
- *
- * The terms in the constraint will be converted to cells in the row.
- * Any term in the constraint with a coefficient of zero is ignored.
- * This method uses the `GetVarSymbol` method to get the symbol for
- * the variables added to the row. If the symbol for a given cell
- * variable is basic, the cell variable will be substituted with the
- * basic row.
- *
- * The necessary slack and error variables will be added to the row.
- * If the constant for the row is negative, the sign for the row
- * will be inverted so the constant becomes positive.
- *
- * The tag will be updated with the marker and error symbols to use
- * for tracking the movement of the constraint in the tableau.
- */
+/*
+createRow createRow creates a new row object for the given constraint.
+
+ The terms in the constraint will be converted to cells in the row.
+ Any term in the constraint with a coefficient of zero is ignored.
+ This method uses the `GetVarSymbol` method to get the symbol for
+ the variables added to the row. If the symbol for a given cell
+ variable is basic, the cell variable will be substituted with the
+ basic row.
+
+ The necessary slack and error variables will be added to the row.
+ If the constant for the row is negative, the sign for the row
+ will be inverted so the constant becomes positive.
+
+ The tag will be updated with the marker and error symbols to use
+ for tracking the movement of the constraint in the tableau.
+*/
 func (s *Solver) createRow(constraint *Constraint) (row *row, tag tag) {
 	expression := constraint.Expression
 	row = newRow(withConstant(expression.Constant))
@@ -402,11 +419,11 @@ func (s *Solver) createRow(constraint *Constraint) (row *row, tag tag) {
 	return
 }
 
-/**
- * Add the row to the tableau using an artificial variable.
- *
- * This will return false if the constraint cannot be satisfied.
- */
+/*
+addWithArtificialVariable adds the row to the tableau using an artificial variable.
+
+This will return false if the constraint cannot be satisfied.
+*/
 func (s *Solver) addWithArtificialVariable(row *row) bool {
 	// Create and add the artificial variable to the tableau
 	art := newSymbol(SLACK)
@@ -443,14 +460,17 @@ func (s *Solver) addWithArtificialVariable(row *row) bool {
 	return success
 }
 
-/**
- * Optimize the system for the given objective function.
- *
- * This method performs iterations of Phase 2 of the simplex method
- * until the objective function reaches a minimum.
- *
- * @returns InternalSolverError The value of the objective function is unbounded.
- */
+/*
+optimize optimizes the system for the given objective function.
+
+This method performs iterations of Phase 2 of the simplex method
+until the objective function reaches a minimum.
+
+Returns
+
+	InternalSolverError
+The value of the objective function is unbounded.
+*/
 func (s *Solver) optimize(objective *row) error {
 	for {
 		enterSym := objective.getEnteringSymbol()
@@ -479,7 +499,7 @@ func (s *Solver) optimize(objective *row) error {
 		// If no appropriate exit symbol was found, this indicates that
 		// the objective function is unbounded.
 		if exitSym == nil || exitRow == nil {
-			return UnboundedObjectiveError
+			return UnboundedObjective
 		}
 		// pivot the entering symbol into the basis
 		delete(s.rows, exitSym)
@@ -489,16 +509,19 @@ func (s *Solver) optimize(objective *row) error {
 	}
 }
 
-/**
- * Optimize the system using the dual of the simplex method.
- *
- * The current state of the system should be such that the objective
- * function is optimal, but not feasible. This method will perform
- * an iteration of the dual simplex method to make the solution both
- * optimal and feasible.
- *
- * @returns InternalSolverError The system cannot be dual optimized.
- */
+/*
+dualOptimize optimizes the system using the dual of the simplex method.
+
+The current state of the system should be such that the objective
+function is optimal, but not feasible. This method will perform
+an iteration of the dual simplex method to make the solution both
+optimal and feasible.
+
+Returns
+
+	InternalSolverError
+The system cannot be dual optimized.
+*/
 func (s *Solver) dualOptimize() error {
 	for len(s.infeasibleRows) > 0 {
 
@@ -524,12 +547,12 @@ func (s *Solver) dualOptimize() error {
 	return nil
 }
 
-/**
- * Substitute the parametric symbol with the given row.
- *
- * This method will substitute all instances of the parametric symbol
- * in the tableau and the objective function with the given row.
- */
+/*
+substitute substitutes the parametric symbol with the given row.
+
+This method will substitute all instances of the parametric symbol
+in the tableau and the objective function with the given row.
+*/
 func (s *Solver) substitute(sym *symbol, other *row) {
 	for isym, irow := range s.rows {
 		irow.substitute(sym, other)

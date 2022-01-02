@@ -4,19 +4,22 @@ type SolverError string
 
 func (e SolverError) Error() string { return string(e) }
 
-const DuplicateConstraintException = SolverError("Duplicate Constraint")
 const InternalSolverError = SolverError("Internal Solver Error")
-const UnboundedObjectiveError = SolverError("Objective is Unbounded")
+const UnboundedObjective = SolverError("Objective is Unbounded")
 const BadRequiredStrength = SolverError("Bad Required Strength")
 const FailedToFindLeavingRow = SolverError("Failed to find Leaving Row")
 
-type UnsatisfiableConstraintException struct{ *Constraint }
+type DuplicateConstraint struct{ *Constraint }
 
-func (UnsatisfiableConstraintException) Error() string { return "Unsatisfiable Constraint" }
+func (DuplicateConstraint) Error() string { return "Duplicate Constraint" }
 
-type UnknownConstraintException struct{ *Constraint }
+type UnsatisfiableConstraint struct{ *Constraint }
 
-func (UnknownConstraintException) Error() string { return "Unknown Constraint" }
+func (UnsatisfiableConstraint) Error() string { return "Unsatisfiable Constraint" }
+
+type UnknownConstraint struct{ *Constraint }
+
+func (UnknownConstraint) Error() string { return "Unknown Constraint" }
 
 type UnknownEditVariable struct{ *Variable }
 
