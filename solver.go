@@ -325,7 +325,21 @@ when the entire system must change, since it can avoid unecessary
 heap (de)allocations.
 */
 func (s *Solver) Reset() {
-
+	for k := range s.cns {
+		delete(s.cns, k)
+	}
+	for k := range s.rows {
+		delete(s.rows, k)
+	}
+	for k := range s.vars {
+		delete(s.vars, k)
+	}
+	for k := range s.edits {
+		delete(s.edits, k)
+	}
+	s.infeasibleRows = nil
+	s.objective = newRow()
+	s.artificialObjective = nil
 }
 
 /*
