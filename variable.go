@@ -7,8 +7,8 @@ type Variable struct {
 
 var _ Constrainer = &Variable{}
 
-func V(n string, v float64) *Variable {
-	return &Variable{n, v}
+func V(n string, v ...float64) *Variable {
+	return &Variable{n, append(v, 0.0)[0]}
 }
 
 func NewVariable(name string) *Variable {
