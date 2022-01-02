@@ -51,34 +51,37 @@ func (v *Variable) EqualsExpression(expression Expression) *Constraint {
 	return expression.EqualsVariable(v)
 }
 
-func (v *Variable) LessThanOrEqualToConstant(constant float64) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToConstant(constant)
+func (v *Variable) LessThanOrEqualsConstant(constant float64) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualsConstant(constant)
 }
 
-func (v *Variable) LessThanOrEqualToVariable(variable *Variable) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToVariable(variable)
+func (v *Variable) LessThanOrEqualsVariable(variable *Variable) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualsVariable(variable)
 }
 
-func (v *Variable) LessThanOrEqualToTerm(term Term) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToTerm(term)
+func (v *Variable) LessThanOrEqualsTerm(term Term) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualsTerm(term)
 }
 
-func (v *Variable) LessThanOrEqualToExpression(expression Expression) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualToExpression(expression)
+func (v *Variable) LessThanOrEqualsExpression(expression Expression) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.LessThanOrEqualsExpression(expression)
 }
 
-func (v *Variable) GreaterThanOrEqualToConstant(constant float64) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToConstant(constant)
+func (v *Variable) GreaterThanOrEqualsConstant(constant float64) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualsConstant(constant)
 }
 
-func (v *Variable) GreaterThanOrEqualToVariable(variable *Variable) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToVariable(variable)
+func (v *Variable) GreaterThanOrEqualsVariable(variable *Variable) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualsVariable(variable)
 }
 
-func (v *Variable) GreaterThanOrEqualToTerm(term Term) *Constraint {
-	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualToTerm(term)
+func (v *Variable) GreaterThanOrEqualsTerm(term Term) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualsTerm(term)
 }
 
+func (v *Variable) GreaterThanOrEqualsExpression(expression Expression) *Constraint {
+	return Term{Variable: v, Coefficient: 1.0}.GreaterThanOrEqualsExpression(expression)
+}
 
 func (v *Variable) String() string {
 	return v.Name

@@ -76,7 +76,7 @@ func TestCasso0(t *testing.T) {
 	solver := NewSolver()
 
 	// x <= 10
-	err := solver.AddConstraint(x.LessThanOrEqualToConstant(10.0))
+	err := solver.AddConstraint(x.LessThanOrEqualsConstant(10.0))
 	if err != nil {
 		t.Error(err)
 	}
@@ -99,7 +99,7 @@ func TestCasso1(t *testing.T) {
 	solver := NewSolver()
 
 	// x <= y
-	err := solver.AddConstraint(x.LessThanOrEqualToVariable(y))
+	err := solver.AddConstraint(x.LessThanOrEqualsVariable(y))
 	if err != nil {
 		t.Error(err)
 	}
@@ -134,13 +134,13 @@ func TestAddDelete1(t *testing.T) {
 	x := NewVariable("x")
 	solver := NewSolver()
 
-	solver.AddConstraint(x.LessThanOrEqualToConstant(100.0), Strength(WEAK))
+	solver.AddConstraint(x.LessThanOrEqualsConstant(100.0), Strength(WEAK))
 	solver.UpdateVariables()
 
 	assertEqualsFloat64(t, x.Value, 100, "x =")
 
-	c10 := x.LessThanOrEqualToConstant(10.0)
-	c20 := x.LessThanOrEqualToConstant(20.0)
+	c10 := x.LessThanOrEqualsConstant(10.0)
+	c20 := x.LessThanOrEqualsConstant(20.0)
 
 	solver.AddConstraint(c10)
 	solver.AddConstraint(c20)
@@ -158,7 +158,7 @@ func TestAddDelete1(t *testing.T) {
 
 	assertEqualsFloat64(t, x.Value, 100, "x =")
 
-	c10again := x.LessThanOrEqualToConstant(10.0)
+	c10again := x.LessThanOrEqualsConstant(10.0)
 
 	solver.AddConstraint(c10again)
 	solver.AddConstraint(c10)
@@ -200,11 +200,11 @@ func TestInconsistent2(t *testing.T) {
 	x := NewVariable("x")
 	solver := NewSolver()
 
-	err := solver.AddConstraint(x.GreaterThanOrEqualToConstant(10.0))
+	err := solver.AddConstraint(x.GreaterThanOrEqualsConstant(10.0))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(x.LessThanOrEqualToConstant(5.0))
+	err = solver.AddConstraint(x.LessThanOrEqualsConstant(5.0))
 	if err == nil {
 		t.Errorf("expected err != nil, got err == nil")
 	}
@@ -222,27 +222,27 @@ func TestInconsistent3(t *testing.T) {
 	z := NewVariable("z")
 	solver := NewSolver()
 
-	err := solver.AddConstraint(w.GreaterThanOrEqualToConstant(10.0))
+	err := solver.AddConstraint(w.GreaterThanOrEqualsConstant(10.0))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(x.GreaterThanOrEqualToVariable(w))
+	err = solver.AddConstraint(x.GreaterThanOrEqualsVariable(w))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(y.GreaterThanOrEqualToVariable(x))
+	err = solver.AddConstraint(y.GreaterThanOrEqualsVariable(x))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(z.GreaterThanOrEqualToVariable(y))
+	err = solver.AddConstraint(z.GreaterThanOrEqualsVariable(y))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(z.GreaterThanOrEqualToConstant(8.0))
+	err = solver.AddConstraint(z.GreaterThanOrEqualsConstant(8.0))
 	if err != nil {
 		t.Errorf("expected err == nil, got err != nil")
 	}
-	err = solver.AddConstraint(z.LessThanOrEqualToConstant(4.0))
+	err = solver.AddConstraint(z.LessThanOrEqualsConstant(4.0))
 	if err == nil {
 		t.Errorf("expected err != nil, got err == nil")
 	}

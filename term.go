@@ -61,35 +61,35 @@ func (t Term) EqualsExpression(expression Expression) *Constraint {
 	return expression.EqualsTerm(t)
 }
 
-func (t Term) LessThanOrEqualToConstant(constant float64) *Constraint {
+func (t Term) LessThanOrEqualsConstant(constant float64) *Constraint {
 	return NewConstraint(t.AddConstant(-constant), LE)
 }
 
-func (t Term) LessThanOrEqualToVariable(variable *Variable) *Constraint {
+func (t Term) LessThanOrEqualsVariable(variable *Variable) *Constraint {
 	return NewConstraint(t.Add(variable.Negate()), LE)
 }
 
-func (t Term) LessThanOrEqualToTerm(term Term) *Constraint {
+func (t Term) LessThanOrEqualsTerm(term Term) *Constraint {
 	return NewConstraint(t.Add(term.Negate()), LE)
 }
 
-func (t Term) LessThanOrEqualToExpression(expression Expression) *Constraint {
+func (t Term) LessThanOrEqualsExpression(expression Expression) *Constraint {
 	return NewConstraint(t.AddExpression(expression.Negate()), LE)
 }
 
-func (t Term) GreaterThanOrEqualToConstant(constant float64) *Constraint {
+func (t Term) GreaterThanOrEqualsConstant(constant float64) *Constraint {
 	return NewConstraint(t.AddConstant(-constant), GE)
 }
 
-func (t Term) GreaterThanOrEqualToVariable(variable *Variable) *Constraint {
+func (t Term) GreaterThanOrEqualsVariable(variable *Variable) *Constraint {
 	return NewConstraint(t.Add(variable.Negate()), GE)
 }
 
-func (t Term) GreaterThanOrEqualToTerm(term Term) *Constraint {
+func (t Term) GreaterThanOrEqualsTerm(term Term) *Constraint {
 	return NewConstraint(t.Add(term.Negate()), GE)
 }
 
-func (t Term) GreaterThanOrEqualToExpression(expression Expression) *Constraint {
+func (t Term) GreaterThanOrEqualsExpression(expression Expression) *Constraint {
 	return NewConstraint(t.AddExpression(expression.Negate()), GE)
 }
 
