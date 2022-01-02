@@ -3,67 +3,39 @@ package kiwi
 import "math"
 
 var (
-	REQUIRED = STRENGTH(1000, 1000, 1000, 1)
-	STRONG   = STRENGTH(1, 0, 0, 1)
-	MEDIUM   = STRENGTH(0, 1, 0, 1)
-	WEAK     = STRENGTH(0, 0, 1, 1)
-	OPTIONAL = STRENGTH(0, 0, 0, 1)
+	REQUIRED = STRENGTH(1000, 1000, 1000)
+	STRONG   = STRENGTH(1, 0, 0)
+	MEDIUM   = STRENGTH(0, 1, 0)
+	WEAK     = STRENGTH(0, 0, 1)
+	OPTIONAL = STRENGTH(0, 0, 0)
 )
 
-// STRENGTH encodes a higest level Required, a lowest level Optional and 3 strength bands
-// inbetween named 'Strong', 'Medium' and 'Weak'.
-// Optional() < Weak(1 .. <1000) < Medium(1 .. <1000) < Strong(1 .. <1000) < Required()
-func STRENGTH(strong, medium, weak, weight float64) float64 {
+// STRENGTH encodes 3 strength bands named 'Strong', 'Medium' and 'Weak'.
+// There are 2 special values 'Required' and 'Optional' that are at the extreme
+// edges of the strength spectrum.
+// 	Required > Strong(1 .. <1000) > Medium(1 .. <1000) > Weak(1 .. <1000) > Optional
+func STRENGTH(strong, medium, weak float64) float64 {
 	var strength float64
-	strength += math.Max(0, math.Min(1000, strong*weight)) * 1000000
-	strength += math.Max(0, math.Min(1000, medium*weight)) * 1000
-	strength += math.Max(0, math.Min(1000, weak*weight))
+	strength += math.Max(0, math.Min(1000, strong)) * 1000000
+	strength += math.Max(0, math.Min(1000, medium)) * 1000
+	strength += math.Max(0, math.Min(1000, weak))
 	return strength
 }
 
-// Strength is a constraint option to set the strength of the constraint
-func Strength(strength float64) ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = math.Max(0, math.Min(strength, REQUIRED))
-	}
+// Strong returns a strong strength with a weight in the range [1 .. 1000)
+func Strong(weight ...float64) float64 {
+	w := append(weight, 1.0)[0]
+	return 1000000 * math.Max(1, math.Min(w, 1000-math.SmallestNonzeroFloat64))
 }
 
-// RequiredStrength constraint strength is 1001001000.
-// RequiredStrength() is the same as Strength(REQUIRED).
-func RequiredStrength() ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = 1001001000
-	}
+// Medium returns a medium strength with a weight in the range [1 .. 1000)
+func Medium(weight ...float64) float64 {
+	w := append(weight, 1.0)[0]
+	return 1000 * math.Max(1, math.Min(w, 1000-math.SmallestNonzeroFloat64))
 }
 
-// StrongStrength constraint strength with specific weight in the range [1..1000).
-// StrongStrength(1) is the same as Strength(STRONG).
-func StrongStrength(weight float64) ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = 1000000 * math.Max(1, math.Min(weight, 1000-math.SmallestNonzeroFloat64))
-	}
-}
-
-// MediumStrength constraint strength with specific weight in the range [1..1000).
-// MediumStrength(1) is the same as Strength(MEDIUM).
-func MediumStrength(weight float64) ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = 1000 * math.Max(1, math.Min(weight, 1000-math.SmallestNonzeroFloat64))
-	}
-}
-
-// WeakStrength constraint strength with specific weight in the range [1..1000).
-// WeakStrength(1) is the same as Strength(WEAK).
-func WeakStrength(weight float64) ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = 1 * math.Max(1, math.Min(weight, 1000-math.SmallestNonzeroFloat64))
-	}
-}
-
-// OptionalStrength constraint strength is 0.0.
-// OptionalStrength() is the same as Strength(OPTIONAL).
-func OptionalStrength() ConstraintOption {
-	return func(c *Constraint) {
-		c.Strength = 0
-	}
+// Weak returns a weak strength with a weight in the range [1 .. 1000)
+func Weak(weight ...float64) float64 {
+	w := append(weight, 1.0)[0]
+	return 1 * math.Max(1, math.Min(w, 1000-math.SmallestNonzeroFloat64))
 }

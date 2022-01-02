@@ -1,5 +1,7 @@
 package kiwi
 
+import "math"
+
 type Constraint struct {
 	Expression Expression
 	Operator   Operator
@@ -7,6 +9,13 @@ type Constraint struct {
 }
 
 type ConstraintOption func(*Constraint)
+
+// Strength is a constraint option to set the strength of the constraint
+func Strength(strength float64) ConstraintOption {
+	return func(c *Constraint) {
+		c.Strength = math.Max(0, math.Min(strength, REQUIRED))
+	}
+}
 
 func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *Constraint {
 	// reduce: c + pv + qv + rw -> c + (p+q)v + rw
