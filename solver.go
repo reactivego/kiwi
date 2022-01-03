@@ -339,19 +339,19 @@ func (s *Solver) Reset() {
 /*
 createRow createRow creates a new row object for the given constraint.
 
- The terms in the constraint will be converted to cells in the row.
- Any term in the constraint with a coefficient of zero is ignored.
- This method uses the `GetVarSymbol` method to get the symbol for
- the variables added to the row. If the symbol for a given cell
- variable is basic, the cell variable will be substituted with the
- basic row.
+The terms in the constraint will be converted to cells in the row.
+Any term in the constraint with a coefficient of zero is ignored.
+This method uses the `GetVarSymbol` method to get the symbol for
+the variables added to the row. If the symbol for a given cell
+variable is basic, the cell variable will be substituted with the
+basic row.
 
- The necessary slack and error variables will be added to the row.
- If the constant for the row is negative, the sign for the row
- will be inverted so the constant becomes positive.
+The necessary slack and error variables will be added to the row.
+If the constant for the row is negative, the sign for the row
+will be inverted so the constant becomes positive.
 
- The tag will be updated with the marker and error symbols to use
- for tracking the movement of the constraint in the tableau.
+The tag will be updated with the marker and error symbols to use
+for tracking the movement of the constraint in the tableau.
 */
 func (s *Solver) createRow(constraint *Constraint) (row *row, tag tag) {
 	expression := constraint.Expression
