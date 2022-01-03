@@ -1,6 +1,7 @@
 package kiwi
 
 import (
+	"math"
 	"strings"
 	"testing"
 )
@@ -71,9 +72,9 @@ func TestCasso1(t *testing.T) {
 	assert.Equal(t, nil, err, "err")
 	err = solver.AddConstraint(y.EqualsExpression(x.AddConstant(3))) // y = x + 3
 	assert.Equal(t, nil, err, "err")
-	err = solver.AddConstraint(x.EqualsConstant(10), Strength(WEAK)) // x = 10 | WEAK
+	err = solver.AddConstraint(x.EqualsConstant(10), WithStrength(WEAK)) // x = 10 | WEAK
 	assert.Equal(t, nil, err, "err")
-	err = solver.AddConstraint(y.EqualsConstant(10), Strength(WEAK)) // y = 10 | WEAK
+	err = solver.AddConstraint(y.EqualsConstant(10), WithStrength(WEAK)) // y = 10 | WEAK
 	assert.Equal(t, nil, err, "err")
 
 	solver.UpdateVariables()
@@ -90,7 +91,7 @@ func TestAddDelete1(t *testing.T) {
 	x := Var("x")
 	solver := NewSolver()
 
-	solver.AddConstraint(x.LessThanOrEqualsConstant(100), Strength(WEAK)) // x <= 100 | WEAK
+	solver.AddConstraint(x.LessThanOrEqualsConstant(100), WithStrength(WEAK)) // x <= 100 | WEAK
 
 	solver.UpdateVariables()
 	assert.EqualFloat64(t, 100, x.Value, "x.Value")
@@ -177,18 +178,37 @@ func TestInconsistent3(t *testing.T) {
 }
 
 func TestStrength(t *testing.T) {
-	assert.EqualFloat64(t, 1001001000, REQUIRED, "REQUIRED")
-	assert.EqualFloat64(t, 1000000, STRONG, "STRONG")
-	assert.EqualFloat64(t, 1000, MEDIUM, "MEDIUM")
-	assert.EqualFloat64(t, 1, WEAK, "WEAK")
-	assert.EqualFloat64(t, 0, OPTIONAL, "OPTIONAL")
+	STRENGTH := func(strong, medium, weak float64) float64 {
+		var s float64
+		s += math.Max(0, math.Min(1000, strong)) * 1000000
+		s += math.Max(0, math.Min(1000, medium)) * 1000
+		s += math.Max(0, math.Min(1000, weak))
+		return s
+	}
 
-	assert.EqualFloat64(t, 1000000, Strong(1), "Strong(1)")
-	assert.EqualFloat64(t, 321000000, Strong(321), "Strong(321)")
-	assert.EqualFloat64(t, 1000, Medium(1), "Medium(1)")
-	assert.EqualFloat64(t, 321000, Medium(321), "Medium(321)")
-	assert.EqualFloat64(t, 1, Weak(1), "Weak(1)")
-	assert.EqualFloat64(t, 321, Weak(321), "Weak(321)")
+	assert.EqualFloat64(t, 1001001000, STRENGTH(1000, 1000, 1000), "REQUIRED")
+	assert.EqualFloat64(t, 1000000, STRENGTH(1, 0, 0), "STRONG")
+	assert.EqualFloat64(t, 1000, STRENGTH(0, 1, 0), "MEDIUM")
+	assert.EqualFloat64(t, 1, STRENGTH(0, 0, 1), "WEAK")
+	assert.EqualFloat64(t, 0, STRENGTH(0, 0, 0), "OPTIONAL")
+
+	assert.EqualFloat64(t, 1001001000, float64(REQUIRED), "REQUIRED")
+	assert.EqualFloat64(t, 1000000, float64(STRONG), "STRONG")
+	assert.EqualFloat64(t, 1000, float64(MEDIUM), "MEDIUM")
+	assert.EqualFloat64(t, 1, float64(WEAK), "WEAK")
+	assert.EqualFloat64(t, 0, float64(OPTIONAL), "OPTIONAL")
+
+	assert.EqualFloat64(t, 1000000, float64(Strong(1)), "Strong(1)")
+	assert.EqualFloat64(t, 321000000, float64(Strong(321)), "Strong(321)")
+	assert.EqualFloat64(t, 1000, float64(Medium(1)), "Medium(1)")
+	assert.EqualFloat64(t, 321000, float64(Medium(321)), "Medium(321)")
+	assert.EqualFloat64(t, 1, float64(Weak(1)), "Weak(1)")
+	assert.EqualFloat64(t, 321, float64(Weak(321)), "Weak(321)")
+
+	assert.Equal(t, true, REQUIRED > Strong(1000), "REQUIRED > Strong(1000)")
+	assert.Equal(t, true, Strong(0) > Medium(1000), "Strong(0) > Medium(1000)")
+	assert.Equal(t, true, Medium(0) > Weak(1000), "Medium(0) > Weak(1000)")
+	assert.Equal(t, true, Weak(0) > OPTIONAL, "Weak(0) > OPTIONAL")
 }
 
 func TestEditVars(t *testing.T) {
@@ -207,9 +227,9 @@ func TestEditVars(t *testing.T) {
 		assert.Equal(t, nil, err, "err")
 	}
 
-	err := solver.AddConstraint(x1.EqualsConstant(40), Strength(WEAK)) // x1 == 40 | WEAK
+	err := solver.AddConstraint(x1.EqualsConstant(40), WithStrength(WEAK)) // x1 == 40 | WEAK
 	assert.Equal(t, nil, err, "err")
-	err = solver.AddEditVariable(xm, Strength(STRONG))
+	err = solver.AddEditVariable(xm, WithStrength(STRONG))
 	assert.Equal(t, nil, err, "err")
 	err = solver.SuggestValue(xm, 60) // xm == 60 | STRONG
 	assert.Equal(t, nil, err, "err")
@@ -232,10 +252,10 @@ func TestManagingEditVariable(t *testing.T) {
 
 	assert.Equal(t, false, s.HasEditVariable(foo), "s.HasEditVariable(foo)")
 
-	s.AddEditVariable(foo, Strength(WEAK))
+	s.AddEditVariable(foo, WithStrength(WEAK))
 	assert.Equal(t, true, s.HasEditVariable(foo), "s.HasEditVariable(foo)")
 
-	err := s.AddEditVariable(foo, Strength(MEDIUM))
+	err := s.AddEditVariable(foo, WithStrength(MEDIUM))
 	assert.NotEqual(t, nil, err, "err")
 	_, ok := err.(DuplicateEditVariable)
 	assert.Equal(t, true, ok, "_, ok := err.(DuplicateEditVariable); ok")
@@ -253,7 +273,7 @@ func TestManagingEditVariable(t *testing.T) {
 	err = s.AddEditVariable(foo)
 	assert.Equal(t, BadRequiredStrength, err, "err")
 
-	err = s.AddEditVariable(bar, Strength(STRONG))
+	err = s.AddEditVariable(bar, WithStrength(STRONG))
 	assert.Equal(t, nil, err, "err")
 	assert.Equal(t, true, s.HasEditVariable(bar), "s.HasEditVariable(bar)")
 
@@ -272,9 +292,9 @@ func TestSuggestingValuesForEditVariables(t *testing.T) {
 	s := NewSolver()
 	v1 := Var("foo")
 
-	err := s.AddEditVariable(v1, Strength(MEDIUM))
+	err := s.AddEditVariable(v1, WithStrength(MEDIUM))
 	assert.Equal(t, nil, err, "err")
-	err = s.AddConstraint(v1.EqualsConstant(1), Strength(WEAK)) // v1 == 1
+	err = s.AddConstraint(v1.EqualsConstant(1), WithStrength(WEAK)) // v1 == 1
 	assert.Equal(t, nil, err, "err")
 	err = s.SuggestValue(v1, 2)
 	assert.Equal(t, nil, err, "err")
@@ -286,11 +306,11 @@ func TestSuggestingValuesForEditVariables(t *testing.T) {
 	v1, v2 := Var("foo"), Var("bar")
 	s = NewSolver()
 
-	s.AddEditVariable(v2, Strength(WEAK))                              // v2 == <var> | WEAK
-	s.AddConstraint(v1.AddVariable(v2).EqualsConstant(0))              // v1 + v2 == 0
-	s.AddConstraint(v2.LessThanOrEqualsConstant(-1))                   // v2 <= -1
-	s.AddConstraint(v2.GreaterThanOrEqualsConstant(0), Strength(WEAK)) // v2 >= 0 | WEAK
-	s.SuggestValue(v2, 0.0)                                            // v2 = 0
+	s.AddEditVariable(v2, WithStrength(WEAK))                              // v2 == <var> | WEAK
+	s.AddConstraint(v1.AddVariable(v2).EqualsConstant(0))                  // v1 + v2 == 0
+	s.AddConstraint(v2.LessThanOrEqualsConstant(-1))                       // v2 <= -1
+	s.AddConstraint(v2.GreaterThanOrEqualsConstant(0), WithStrength(WEAK)) // v2 >= 0 | WEAK
+	s.SuggestValue(v2, 0.0)                                                // v2 = 0
 
 	s.UpdateVariables()
 	assert.EqualFloat64(t, -1, v2.Value, "v2.Value")
@@ -333,7 +353,7 @@ func TestSolvingUnderConstrainedSystem(t *testing.T) {
 	v := Var("foo")
 
 	c := v.Multiply(2).AddConstant(1).GreaterThanOrEqualsConstant(0) // 2 * v + 1 >= 0
-	s.AddEditVariable(v, Strength(WEAK))
+	s.AddEditVariable(v, WithStrength(WEAK))
 	s.AddConstraint(c)
 	err := s.SuggestValue(v, 10)
 	assert.Equal(t, nil, err, "err")
@@ -350,9 +370,9 @@ func TestSolvingWithStrength(t *testing.T) {
 
 	s := NewSolver()
 
-	s.AddConstraint(foo.AddVariable(bar).EqualsConstant(0))             // foo + bar == 0
-	s.AddConstraint(foo.EqualsConstant(10))                             // foo == 10
-	s.AddConstraint(bar.GreaterThanOrEqualsConstant(0), Strength(WEAK)) // bar >= 0 | WEAK
+	s.AddConstraint(foo.AddVariable(bar).EqualsConstant(0))                 // foo + bar == 0
+	s.AddConstraint(foo.EqualsConstant(10))                                 // foo == 10
+	s.AddConstraint(bar.GreaterThanOrEqualsConstant(0), WithStrength(WEAK)) // bar >= 0 | WEAK
 
 	s.UpdateVariables()
 	assert.EqualFloat64(t, 10, foo.Value, "foo.Value")
@@ -360,9 +380,9 @@ func TestSolvingWithStrength(t *testing.T) {
 
 	s.Reset()
 
-	s.AddConstraint(foo.AddVariable(bar).EqualsConstant(0))                // v1 + v2 == 0
-	s.AddConstraint(foo.GreaterThanOrEqualsConstant(10), Strength(MEDIUM)) // v1 >= 10 | MEDIUM
-	s.AddConstraint(bar.EqualsConstant(2), Strength(STRONG))               // v2 == 2 | STRONG
+	s.AddConstraint(foo.AddVariable(bar).EqualsConstant(0))                    // v1 + v2 == 0
+	s.AddConstraint(foo.GreaterThanOrEqualsConstant(10), WithStrength(MEDIUM)) // v1 >= 10 | MEDIUM
+	s.AddConstraint(bar.EqualsConstant(2), WithStrength(STRONG))               // v2 == 2 | STRONG
 
 	s.UpdateVariables()
 	assert.EqualFloat64(t, -2, foo.Value, "foo.Value")
@@ -413,10 +433,10 @@ func TestDumpingSolver(t *testing.T) {
 
 	s := NewSolver()
 
-	s.AddEditVariable(v2, Strength(WEAK))
-	s.AddConstraint(v1.AddVariable(v2).EqualsConstant(0))              // v1 + v2 == 0
-	s.AddConstraint(v2.LessThanOrEqualsConstant(-1))                   // v2 <= -1
-	s.AddConstraint(v2.GreaterThanOrEqualsConstant(0), Strength(WEAK)) // v2 >= 0 | WEAK
+	s.AddEditVariable(v2, WithStrength(WEAK))
+	s.AddConstraint(v1.AddVariable(v2).EqualsConstant(0))                  // v1 + v2 == 0
+	s.AddConstraint(v2.LessThanOrEqualsConstant(-1))                       // v2 <= -1
+	s.AddConstraint(v2.GreaterThanOrEqualsConstant(0), WithStrength(WEAK)) // v2 >= 0 | WEAK
 
 	s.UpdateVariables()
 	err := s.AddConstraint(v2.GreaterThanOrEqualsConstant(1)) // (v2 >= 1)
@@ -443,9 +463,9 @@ func TestHandlingInfeasibleConstraints(t *testing.T) {
 
 	s := NewSolver()
 
-	s.AddEditVariable(xm, Strength(STRONG))
-	s.AddEditVariable(xl, Strength(WEAK))
-	s.AddEditVariable(xr, Strength(WEAK))
+	s.AddEditVariable(xm, WithStrength(STRONG))
+	s.AddEditVariable(xl, WithStrength(WEAK))
+	s.AddEditVariable(xr, WithStrength(WEAK))
 
 	s.AddConstraint(xm.Multiply(2).EqualsExpression(xl.AddVariable(xr))) // 2 * xm == xl + xr
 	s.AddConstraint(xl.AddConstant(20).LessThanOrEqualsVariable(xr))     // xl + 20 <= xr

@@ -138,7 +138,7 @@ func (s *Solver) removeConstraintEffects(constraint *Constraint, tag tag) {
 	}
 }
 
-func (s *Solver) removeMarkerEffects(marker *symbol, strength float64) {
+func (s *Solver) removeMarkerEffects(marker *symbol, strength Strength) {
 	if row, present := s.rows[marker]; present {
 		s.objective.insertRowWithCoefficient(row, float64(-strength))
 	} else {

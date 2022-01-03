@@ -8,15 +8,16 @@ import (
 type Constraint struct {
 	Expression Expression
 	Operator   Operator
-	Strength   float64
+	Strength   Strength
 }
 
 type ConstraintOption func(*Constraint)
 
-// Strength is a constraint option to set the strength of the constraint
-func Strength(strength float64) ConstraintOption {
+// WithStrength is a constraint option to set the strength of the constraint
+func WithStrength(strength Strength) ConstraintOption {
 	return func(c *Constraint) {
-		c.Strength = math.Max(0, math.Min(strength, REQUIRED))
+		optional, strength, required := float64(OPTIONAL), float64(strength), float64(REQUIRED)
+		c.Strength = Strength(math.Max(optional, math.Min(strength, required)))
 	}
 }
 

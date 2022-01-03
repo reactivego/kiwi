@@ -1,41 +1,85 @@
 package kiwi
 
-import "math"
-
-var (
-	REQUIRED = STRENGTH(1000, 1000, 1000)
-	STRONG   = STRENGTH(1, 0, 0)
-	MEDIUM   = STRENGTH(0, 1, 0)
-	WEAK     = STRENGTH(0, 0, 1)
-	OPTIONAL = STRENGTH(0, 0, 0)
+import (
+	"math"
+	"strconv"
 )
 
-// STRENGTH encodes 3 strength bands named 'Strong', 'Medium' and 'Weak'.
-// There are 2 special values 'Required' and 'Optional' that are at the extreme
-// edges of the strength spectrum.
-// 	Required > Strong(1 .. <1000) > Medium(1 .. <1000) > Weak(1 .. <1000) > Optional
-func STRENGTH(strong, medium, weak float64) float64 {
-	var strength float64
-	strength += math.Max(0, math.Min(1000, strong)) * 1000000
-	strength += math.Max(0, math.Min(1000, medium)) * 1000
-	strength += math.Max(0, math.Min(1000, weak))
-	return strength
+const (
+	// REQUIRED is the strongest strength value indicating the contraint must be satisfied.
+	REQUIRED Strength = 1001001000
+	// STRONG has the same value as Strong(1)
+	STRONG Strength = 1000000
+	// MEDIUM has the same value as Medium(1)
+	MEDIUM Strength = 1000
+	// WEAK has the same value as Weak(1)
+	WEAK Strength = 1
+	// OPTIONAL is the weakest strength value indicating the contraint is optional.
+	OPTIONAL Strength = 0
+)
+
+type Strength float64
+
+func (s Strength) String() string {
+	switch s {
+	case REQUIRED:
+		return "REQUIRED"
+	case STRONG:
+		return "STRONG"
+	case MEDIUM:
+		return "MEDIUM"
+	case WEAK:
+		return "WEAK"
+	case OPTIONAL:
+		return "OPTIONAL"
+	default:
+		if Strong(1000) >= s && s >= Strong(1) {
+			return "Strong(" + strconv.FormatFloat(float64(s/1000000), 'f', -1, 64) + ")"
+		} else if Medium(1000) >= s && s >= Medium(1) {
+			return "Medium(" + strconv.FormatFloat(float64(s/1000), 'f', -1, 64) + ")"
+		} else if Weak(1000) >= s && s >= Weak(1) {
+			return "Weak(" + strconv.FormatFloat(float64(s), 'f', -1, 64) + ")"
+		}
+		return strconv.FormatFloat(float64(s), 'f', -1, 64)
+	}
+}
+
+func (s Strength) Base() Strength {
+	if Strong(1000) >= s && s >= Strong(1) {
+		return STRONG
+	} else if Medium(1000) >= s && s >= Medium(1) {
+		return MEDIUM
+	} else if Weak(1000) >= s && s >= Weak(1) {
+		return WEAK
+	}
+	return s
+}
+
+func (s Strength) WithWeight(weight float64) Strength {
+	if Strong(1000) >= s && s >= Strong(1) {
+		return Strong(weight)
+	} else if Medium(1000) >= s && s >= Medium(1) {
+		return Medium(weight)
+	} else if Weak(1000) >= s && s >= Weak(1) {
+		return Weak(weight)
+	}
+	return s
 }
 
 // Strong returns a strong strength with a weight in the range [1 .. 1000)
-func Strong(weight ...float64) float64 {
+func Strong(weight ...float64) Strength {
 	w := append(weight, 1.0)[0]
-	return 1000000 * math.Max(1, math.Min(w, 1000-math.SmallestNonzeroFloat64))
+	return Strength(1000000 * math.Max(1, math.Min(w, 999.9999999999999)))
 }
 
 // Medium returns a medium strength with a weight in the range [1 .. 1000)
-func Medium(weight ...float64) float64 {
+func Medium(weight ...float64) Strength {
 	w := append(weight, 1.0)[0]
-	return 1000 * math.Max(1, math.Min(w, 1000-math.SmallestNonzeroFloat64))
+	return Strength(1000 * math.Max(1, math.Min(w, 999.9999999999999)))
 }
 
 // Weak returns a weak strength with a weight in the range [1 .. 1000)
-func Weak(weight ...float64) float64 {
+func Weak(weight ...float64) Strength {
 	w := append(weight, 1.0)[0]
-	return 1 * math.Max(1, math.Min(w, 1000-math.SmallestNonzeroFloat64))
+	return Strength(1 * math.Max(1, math.Min(w, 999.9999999999999)))
 }
