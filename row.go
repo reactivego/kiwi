@@ -212,6 +212,7 @@ substitute substitutes a symbol with the data from another row.
 Given a row of the form a * x + b and a substitution of the
 form x = 3 * y + c the row will be updated to reflect the
 expression 3 * a * y + a * c + b.
+
 If the symbol does not exist in the row, this is a no-op.
 */
 func (r *row) substitute(sym *symbol, other *row) {
