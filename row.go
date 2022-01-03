@@ -76,18 +76,19 @@ func (r *row) insertSymbol(sym *symbol) {
 
 /*
 insertRowWithCoefficient inserts a row into this row with a given coefficient.
+
 The constant and the cells of the other row will be multiplied by
 the coefficient and added to this row. Any cell with a resulting
 coefficient of zero will be removed from the row.
 */
-func (r *row) insertRowWithCoefficient(other *row, coeff float64) {
-	r.constant += other.constant * coeff
+func (r *row) insertRowWithCoefficient(other *row, coefficient float64) {
+	r.constant += other.constant * coefficient
 	for otherSym, otherCoeff := range other.cells {
-		combinedCoeff := r.cells[otherSym] + otherCoeff*coeff
-		if NearZero(combinedCoeff) {
+		coeff := r.cells[otherSym] + otherCoeff*coefficient
+		if NearZero(coeff) {
 			delete(r.cells, otherSym)
 		} else {
-			r.cells[otherSym] = combinedCoeff
+			r.cells[otherSym] = coeff
 		}
 	}
 }
