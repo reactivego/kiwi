@@ -212,10 +212,8 @@ func (s *Solver) AddEditVariable(variable *Variable, options ...ConstraintOption
 	if _, present := s.edits[variable]; present {
 		return DuplicateEditVariable{variable}
 	}
-	constraint := variable.EqualsConstant(0.0)
-	for _, option := range options {
-		option(constraint)
-	}
+	e := Expression{[]Term{{variable, 1.0}}, 0.0}
+	constraint := NewConstraint(e, EQ, options...)
 	if constraint.Strength == REQUIRED {
 		return BadRequiredStrength
 	}
