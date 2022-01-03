@@ -266,42 +266,34 @@ Returns
 The given edit variable has not been added to the solver.
 */
 func (s *Solver) SuggestValue(variable *Variable, value float64) error {
-	edit, present := s.edits[variable]
+	info, present := s.edits[variable]
 	if !present {
 		return UnknownEditVariable{variable}
 	}
-	defer s.dualOptimize()
-	delta := value - edit.constant
-	edit.constant = value
+	delta := value - info.constant
+	info.constant = value
 
-	// Check first if the positive error variable is basic.
-	row, present := s.rows[edit.tag.marker]
-	if present {
+	if row, present := s.rows[info.tag.marker]; present {
+		// Check first if the positive error variable is basic.
 		if row.add(-delta) < 0.0 {
-			s.infeasibleRows = append(s.infeasibleRows, edit.tag.marker)
+			s.infeasibleRows = append(s.infeasibleRows, info.tag.marker)
 		}
-		return nil
-	}
-
-	// Check next if the negative error variable is basic.
-	row, present = s.rows[edit.tag.other]
-	if present {
+	} else if row, present = s.rows[info.tag.other]; present {
+		// Check next if the negative error variable is basic.
 		if row.add(delta) < 0.0 {
-			s.infeasibleRows = append(s.infeasibleRows, edit.tag.other)
+			s.infeasibleRows = append(s.infeasibleRows, info.tag.other)
 		}
-		return nil
+	} else {
+		// Otherwise update each row where the error variables exist.
+		for sym, row := range s.rows {
+			coeff := row.coefficientFor(info.tag.marker)
+			if coeff != 0.0 && row.add(delta*coeff) < 0.0 && !sym.is(EXTERNAL) {
+				s.infeasibleRows = append(s.infeasibleRows, sym)
+			}
+		}
 	}
 
-	// Otherwise update each row where the error variables exist.
-	for sym, row := range s.rows {
-		coeff := row.coefficientFor(edit.tag.marker)
-		if coeff != 0.0 && row.add(delta*coeff) < 0.0 && !sym.is(EXTERNAL) {
-			s.infeasibleRows = append(s.infeasibleRows, sym)
-		}
-		return nil
-	}
-
-	return nil
+	return s.dualOptimize()
 }
 
 /*
