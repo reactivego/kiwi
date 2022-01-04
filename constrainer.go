@@ -1,16 +1,16 @@
 package kiwi
 
 type Constrainer interface {
-	EqualsConstant(constant float64) *Constraint
-	EqualsVariable(variable *Variable) *Constraint
-	EqualsTerm(term Term) *Constraint
-	EqualsExpression(expression Expression) *Constraint
-	LessThanOrEqualsConstant(constant float64) *Constraint
-	LessThanOrEqualsVariable(variable *Variable) *Constraint
-	LessThanOrEqualsTerm(term Term) *Constraint
-	LessThanOrEqualsExpression(expression Expression) *Constraint
-	GreaterThanOrEqualsConstant(constant float64) *Constraint
-	GreaterThanOrEqualsVariable(variable *Variable) *Constraint
-	GreaterThanOrEqualsTerm(term Term) *Constraint
-	GreaterThanOrEqualsExpression(expression Expression) *Constraint
+	EqualsConstant(float64) *Constraint
+	EqualsVariable(*Variable) *Constraint
+	EqualsTerm(Term) *Constraint
+	EqualsExpression(Expression) *Constraint
+	LessThanOrEqualsConstant(float64) *Constraint
+	LessThanOrEqualsVariable(*Variable) *Constraint
+	LessThanOrEqualsTerm(Term) *Constraint
+	LessThanOrEqualsExpression(Expression) *Constraint
+	GreaterThanOrEqualsConstant(float64) *Constraint
+	GreaterThanOrEqualsVariable(*Variable) *Constraint
+	GreaterThanOrEqualsTerm(Term) *Constraint
+	GreaterThanOrEqualsExpression(Expression) *Constraint
 }
