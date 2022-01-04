@@ -569,27 +569,38 @@ func (s *Solver) substitute(sym *symbol, other *row) {
 
 func (s Solver) String() string {
 	sb := strings.Builder{}
-	sb.WriteString("Objective\n---------\n")
-	sb.WriteString(fmt.Sprintln(s.objective))
-	sb.WriteString("\nTableau\n-------\n")
+	fmt.Fprintln(&sb, "Objective")
+	fmt.Fprintln(&sb, "---------")
+	fmt.Fprintln(&sb, s.objective)
+	fmt.Fprintln(&sb)
+	fmt.Fprintln(&sb, "Tableau")
+	fmt.Fprintln(&sb, "-------")
 	for s, r := range s.rows {
-		sb.WriteString(fmt.Sprintln(s, "|", r))
+		fmt.Fprintln(&sb, s, "|", r)
 	}
-	sb.WriteString("\nInfeasible\n----------\n")
+	fmt.Fprintln(&sb)
+	fmt.Fprintln(&sb, "Infeasible")
+	fmt.Fprintln(&sb, "----------")
 	for _, s := range s.infeasibleRows {
-		sb.WriteString(fmt.Sprintln(s))
+		fmt.Fprintln(&sb, s)
 	}
-	sb.WriteString("\nVariables\n---------\n")
+	fmt.Fprintln(&sb)
+	fmt.Fprintln(&sb, "Variables")
+	fmt.Fprintln(&sb, "---------")
 	for v, s := range s.vars {
-		sb.WriteString(fmt.Sprintln(v, " = ", s))
+		fmt.Fprintln(&sb, v, " = ", s)
 	}
-	sb.WriteString("\nEdit Variables\n--------------\n")
-	for v := range s.edits {
-		sb.WriteString(fmt.Sprintln(v))
+	fmt.Fprintln(&sb)
+	fmt.Fprintln(&sb, "Edit Variables")
+	fmt.Fprintln(&sb, "--------------")
+	for e := range s.edits {
+		fmt.Fprintln(&sb, e)
 	}
-	sb.WriteString("\nConstraints\n-----------\n")
-	for v := range s.cns {
-		sb.WriteString(fmt.Sprintln(v))
+	fmt.Fprintln(&sb)
+	fmt.Fprintln(&sb, "Constraints")
+	fmt.Fprintln(&sb, "-----------")
+	for c := range s.cns {
+		fmt.Fprintln(&sb, c)
 	}
 	return sb.String()
 }
