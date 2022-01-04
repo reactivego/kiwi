@@ -40,14 +40,5 @@ func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *C
 }
 
 func (c *Constraint) String() string {
-	op := " ??   "
-	switch c.Operator {
-	case LE:
-		op = " <= 0 "
-	case GE:
-		op = " >= 0 "
-	case EQ:
-		op = " == 0 "
-	}
-	return fmt.Sprint(c.Expression, op, "| strength = ", c.Strength)
+	return fmt.Sprint(c.Expression, c.Operator, " 0 | Strength = ", c.Strength)
 }
