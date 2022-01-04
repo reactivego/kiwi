@@ -11,6 +11,10 @@ func Var(n string, v ...float64) *Variable {
 	return &Variable{n, append(v, 0.0)[0]}
 }
 
+func Vars(v ...*Variable) []*Variable {
+	return v
+}
+
 func NewVariable(name string) *Variable {
 	return &Variable{Name: name}
 }
