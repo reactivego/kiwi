@@ -1,5 +1,7 @@
 package kiwi
 
+type kind int
+
 const (
 	INVALID kind = iota
 	EXTERNAL
@@ -8,25 +10,10 @@ const (
 	DUMMY
 )
 
-type kind int
-
 func (k kind) is(other kind) bool {
 	return k == other
 }
 
 func (k kind) String() string {
-	switch k {
-	case INVALID:
-		return "i"
-	case EXTERNAL:
-		return "v"
-	case SLACK:
-		return "s"
-	case ERROR:
-		return "e"
-	case DUMMY:
-		return "d"
-	default:
-		return "?"
-	}
+	return [...]string{"i", "v", "s", "e", "d"}[k]
 }
