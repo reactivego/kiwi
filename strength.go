@@ -5,6 +5,8 @@ import (
 	"strconv"
 )
 
+type Strength float64
+
 const (
 	OPTIONAL Strength = iota
 	WEAK
@@ -12,8 +14,6 @@ const (
 	STRONG   = (1000 * MEDIUM)
 	REQUIRED = (1000 * STRONG) + STRONG + MEDIUM
 )
-
-type Strength float64
 
 func (s Strength) String() string {
 	switch s {

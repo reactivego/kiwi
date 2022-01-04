@@ -361,11 +361,10 @@ func (s *Solver) createRow(constraint *Constraint) (row *row, tag tag) {
 			continue
 		}
 
-		variable := term.Variable
-		sym, present := s.vars[variable]
+		sym, present := s.vars[term.Variable]
 		if !present {
 			sym = newSymbol(EXTERNAL)
-			s.vars[variable] = sym
+			s.vars[term.Variable] = sym
 		}
 
 		if otherRow, present := s.rows[sym]; present {
@@ -381,29 +380,24 @@ func (s *Solver) createRow(constraint *Constraint) (row *row, tag tag) {
 		if constraint.Operator == LE {
 			coeff = 1.0
 		}
-		slack := newSymbol(SLACK)
-		tag.marker = slack
-		row.insertSymbolWithCoefficient(slack, coeff)
+		tag.marker = newSymbol(SLACK)
+		row.insertSymbolWithCoefficient(tag.marker, coeff)
 		if constraint.Strength < REQUIRED {
-			error := newSymbol(ERROR)
-			tag.other = error
-			row.insertSymbolWithCoefficient(error, -coeff)
-			s.objective.insertSymbolWithCoefficient(error, float64(constraint.Strength))
+			tag.other = newSymbol(ERROR)
+			row.insertSymbolWithCoefficient(tag.other, -coeff)
+			s.objective.insertSymbolWithCoefficient(tag.other, float64(constraint.Strength))
 		}
 	case EQ:
 		if constraint.Strength < REQUIRED {
-			errplus := newSymbol(ERROR)
-			errminus := newSymbol(ERROR)
-			tag.marker = errplus
-			tag.other = errminus
-			row.insertSymbolWithCoefficient(errplus, -1.0) // v = eplus - eminus
-			row.insertSymbolWithCoefficient(errminus, 1.0) // v - eplus + eminus = 0
-			s.objective.insertSymbolWithCoefficient(errplus, float64(constraint.Strength))
-			s.objective.insertSymbolWithCoefficient(errminus, float64(constraint.Strength))
+			tag.marker = newSymbol(ERROR)                     // errplus
+			tag.other = newSymbol(ERROR)                      // errminus
+			row.insertSymbolWithCoefficient(tag.marker, -1.0) // v = eplus - eminus
+			row.insertSymbolWithCoefficient(tag.other, 1.0)   // v - eplus + eminus = 0
+			s.objective.insertSymbolWithCoefficient(tag.marker, float64(constraint.Strength))
+			s.objective.insertSymbolWithCoefficient(tag.other, float64(constraint.Strength))
 		} else {
-			dummy := newSymbol(DUMMY)
-			tag.marker = dummy
-			row.insertSymbol(dummy)
+			tag.marker = newSymbol(DUMMY)
+			row.insertSymbol(tag.marker)
 		}
 	}
 
@@ -417,7 +411,7 @@ func (s *Solver) createRow(constraint *Constraint) (row *row, tag tag) {
 		tag.other = newSymbol(INVALID)
 	}
 
-	return
+	return row, tag
 }
 
 /*
