@@ -23,20 +23,25 @@ func WithStrength(strength Strength) ConstraintOption {
 
 func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *Constraint {
 	// reduce: c + pv + qv + rw -> c + (p+q)v + rw
-	var vars = make(map[*Variable]float64)
-	for _, t := range expr.Terms {
-		vars[t.Variable] = vars[t.Variable] + t.Coefficient
+	vars := make(map[*Variable]int)
+	collapsed := 0
+	for i, t := range expr.Terms {
+		if j, present := vars[t.Variable]; present {
+			expr.Terms[j].Coefficient += t.Coefficient
+			collapsed++
+		} else {
+			vars[t.Variable] = i - collapsed
+			if collapsed > 0 {
+				expr.Terms[i-collapsed] = t
+			}
+		}
 	}
-	terms := make([]Term, 0, len(vars))
-	for v, c := range vars {
-		terms = append(terms, Term{Variable: v, Coefficient: c})
-	}
-	expr = Expression{Terms: terms, Constant: expr.Constant}
-	c := &Constraint{Expression: expr, Operator: op, Strength: REQUIRED}
+	expr.Terms = expr.Terms[:len(expr.Terms)-collapsed]
+	cns := &Constraint{expr, op, REQUIRED}
 	for _, opt := range options {
-		opt(c)
+		opt(cns)
 	}
-	return c
+	return cns
 }
 
 func (c *Constraint) String() string {
