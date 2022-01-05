@@ -1,6 +1,6 @@
 package kiwi
 
-import "fmt"
+import "strconv"
 
 type Term struct {
 	Variable    *Variable
@@ -34,7 +34,7 @@ func (t Term) AddVariable(variable *Variable) Expression {
 	return Expression{Terms: []Term{t, other}, Constant: 0.0}
 }
 
-func (t Term) Add(term Term) Expression {
+func (t Term) AddTerm(term Term) Expression {
 	return Expression{Terms: []Term{t, term}, Constant: 0.0}
 }
 
@@ -50,11 +50,11 @@ func (t Term) EqualsConstant(constant float64) *Constraint {
 }
 
 func (t Term) EqualsVariable(variable *Variable) *Constraint {
-	return NewConstraint(t.Add(variable.Negate()), EQ)
+	return NewConstraint(t.AddTerm(variable.Negate()), EQ)
 }
 
 func (t Term) EqualsTerm(term Term) *Constraint {
-	return NewConstraint(t.Add(term.Negate()), EQ)
+	return NewConstraint(t.AddTerm(term.Negate()), EQ)
 }
 
 func (t Term) EqualsExpression(expression Expression) *Constraint {
@@ -66,11 +66,11 @@ func (t Term) LessThanOrEqualsConstant(constant float64) *Constraint {
 }
 
 func (t Term) LessThanOrEqualsVariable(variable *Variable) *Constraint {
-	return NewConstraint(t.Add(variable.Negate()), LE)
+	return NewConstraint(t.AddTerm(variable.Negate()), LE)
 }
 
 func (t Term) LessThanOrEqualsTerm(term Term) *Constraint {
-	return NewConstraint(t.Add(term.Negate()), LE)
+	return NewConstraint(t.AddTerm(term.Negate()), LE)
 }
 
 func (t Term) LessThanOrEqualsExpression(expression Expression) *Constraint {
@@ -82,11 +82,11 @@ func (t Term) GreaterThanOrEqualsConstant(constant float64) *Constraint {
 }
 
 func (t Term) GreaterThanOrEqualsVariable(variable *Variable) *Constraint {
-	return NewConstraint(t.Add(variable.Negate()), GE)
+	return NewConstraint(t.AddTerm(variable.Negate()), GE)
 }
 
 func (t Term) GreaterThanOrEqualsTerm(term Term) *Constraint {
-	return NewConstraint(t.Add(term.Negate()), GE)
+	return NewConstraint(t.AddTerm(term.Negate()), GE)
 }
 
 func (t Term) GreaterThanOrEqualsExpression(expression Expression) *Constraint {
@@ -94,5 +94,5 @@ func (t Term) GreaterThanOrEqualsExpression(expression Expression) *Constraint {
 }
 
 func (t Term) String() string {
-	return fmt.Sprint(t.Coefficient, " * ", t.Variable)
+	return strconv.FormatFloat(t.Coefficient, 'f', -1, 64) + " * " + t.Variable.String()
 }

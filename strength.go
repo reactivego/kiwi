@@ -28,38 +28,41 @@ func (s Strength) String() string {
 	case REQUIRED:
 		return "REQUIRED"
 	default:
-		if Weak(1) <= s && s <= Weak(1000) {
+		switch {
+		case Weak(1) <= s && s <= Weak(1000):
 			return "Weak(" + strconv.FormatFloat(float64(s), 'f', -1, 64) + ")"
-		} else if Medium(1) <= s && s <= Medium(1000) {
+		case Medium(1) <= s && s <= Medium(1000):
 			return "Medium(" + strconv.FormatFloat(float64(s/1000), 'f', -1, 64) + ")"
-		} else if Strong(1) <= s && s <= Strong(1000) {
+		case Strong(1) <= s && s <= Strong(1000):
 			return "Strong(" + strconv.FormatFloat(float64(s/1000000), 'f', -1, 64) + ")"
-		} else {
+		default:
 			return strconv.FormatFloat(float64(s), 'f', -1, 64)
 		}
 	}
 }
 
 func (s Strength) Base() Strength {
-	if Weak(1) <= s && s <= Weak(1000) {
+	switch {
+	case Weak(1) <= s && s <= Weak(1000):
 		return WEAK
-	} else if Medium(1) <= s && s <= Medium(1000) {
+	case Medium(1) <= s && s <= Medium(1000):
 		return MEDIUM
-	} else if Strong(1) <= s && s <= Strong(1000) {
+	case Strong(1) <= s && s <= Strong(1000):
 		return STRONG
-	} else {
+	default:
 		return s
 	}
 }
 
 func (s Strength) WithWeight(weight float64) Strength {
-	if Weak(1) <= s && s <= Weak(1000) {
+	switch {
+	case Weak(1) <= s && s <= Weak(1000):
 		return Weak(weight)
-	} else if Medium(1) <= s && s <= Medium(1000) {
+	case Medium(1) <= s && s <= Medium(1000):
 		return Medium(weight)
-	} else if Strong(1) <= s && s <= Strong(1000) {
+	case Strong(1) <= s && s <= Strong(1000):
 		return Strong(weight)
-	} else {
+	default:
 		return s
 	}
 }

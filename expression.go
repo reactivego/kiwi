@@ -1,7 +1,7 @@
 package kiwi
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -113,8 +113,8 @@ func (e Expression) GreaterThanOrEqualsExpression(expression Expression) *Constr
 func (e Expression) String() string {
 	var factors []string
 	for _, t := range e.Terms {
-		factors = append(factors, fmt.Sprint(t))
+		factors = append(factors, t.String())
 	}
-	factors = append(factors, fmt.Sprint(e.Constant))
+	factors = append(factors, strconv.FormatFloat(e.Constant, 'f', -1, 64))
 	return strings.Join(factors, " + ")
 }
