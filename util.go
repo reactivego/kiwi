@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
 package kiwi
 
 const EPS = 1.0e-8
