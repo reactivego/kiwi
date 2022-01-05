@@ -6,6 +6,43 @@ import (
 	"testing"
 )
 
+func TestParser(t *testing.T) {
+	// Parse expressions checking for syntax errors
+	expr, err := ParseExpr("x + y <= 10")
+	assert.Equal(t, nil, err, "err")
+	assert.EqualString(t, "x + y <= INT(10)", expr.String(), "ast.String()")
+
+	x, y := Var("x"), Var("y")
+
+	expr, err = ParseExpr(x, "+", y, "<= 10")
+	assert.Equal(t, nil, err, "err")
+	assert.EqualString(t, "x + y <= INT(10)", expr.String(), "ast.String()")
+
+	expr, err = ParseExpr("xm == 2 + 5 + 0.5 * (xr + xl) / (2 * 2)")
+	assert.Equal(t, nil, err, "err")
+	assert.EqualString(t, "xm == INT(2) + INT(5) + FLOAT(0.5) * (xr + xl) / (INT(2) * INT(2))", expr.String(), "ast.String()")
+
+	expr, err = ParseExpr("xm == (2 * xr + 5 * xl + (xr + xl) + 20 * xr) / (2 * 2)")
+	assert.Equal(t, nil, err, "err")
+	assert.EqualString(t, "xm == (INT(2) * xr + INT(5) * xl + (xr + xl) + INT(20) * xr) / (INT(2) * INT(2))", expr.String(), "ast.String()")
+
+	// Generate a new constraint from the ast while checking for evaluation errors
+	xm, xr, xl := Var("xm"), Var("xr"), Var("xl")
+	vars := Vars(xm, xr, xl)
+
+	expr, err = ParseExpr("xm == 2 + 5 + 0.5 * (xr + xl) / (2 * 2)")
+	assert.Equal(t, nil, err, "err")
+	cns, err := expr.NewConstraint(vars, WithStrength(Strong(123)))
+	assert.Equal(t, nil, err, "err")
+	assert.EqualString(t, "0.125 * xr + 0.125 * xl + -1 * xm + 7 == 0 | Strength = Strong(123)", cns.String(), "cns.String()")
+
+	expr, err = ParseExpr("xm == (2 * xr + 5 * xl + (xr + xl) + 20 * xr) / (2 * 2)")
+	assert.Equal(t, nil, err, "err")
+	cns, err = expr.NewConstraint(vars, WithStrength(Strong(123)))
+	assert.Equal(t, nil, err, "err")
+	assert.EqualString(t, "5.75 * xr + 1.5 * xl + -1 * xm + 0 == 0 | Strength = Strong(123)", cns.String(), "cns.String()")
+}
+
 func TestSimple0(t *testing.T) {
 	solver := NewSolver()
 	x := Var("x")
