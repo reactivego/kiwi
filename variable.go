@@ -32,11 +32,22 @@ func (v *Variable) Negate() Term {
 }
 
 func (v *Variable) AddConstant(constant float64) Expression {
-	return Term{Variable: v, Coefficient: 1.0}.AddConstant(constant)
+	return Expression{[]Term{{v, 1.0}}, constant}
 }
 
 func (v *Variable) AddVariable(variable *Variable) Expression {
-	return Term{Variable: v, Coefficient: 1.0}.AddVariable(variable)
+	return Expression{[]Term{{v, 1.0}, {variable, 1.0}}, 0.0}
+}
+
+func (v *Variable) AddTerm(term Term) Expression {
+	return Expression{[]Term{{v, 1.0}, term}, 0.0}
+}
+
+func (v *Variable) AddExpression(expression Expression) Expression {
+	terms := make([]Term, 1+len(expression.Terms))
+	terms[0] = Term{v, 1.0}
+	copy(terms[1:], expression.Terms)
+	return Expression{terms, expression.Constant}
 }
 
 func (v *Variable) EqualsConstant(constant float64) *Constraint {
