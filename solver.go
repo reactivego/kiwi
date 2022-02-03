@@ -203,6 +203,9 @@ func (s *Solver) HasConstraint(constraint *Constraint) bool {
 AddStay adds a constraint that says that a particular variable shouldn’t be
 modified unless it needs to be - that it should “stay” as is unless there is
 a reason not to.
+
+By default when no constraint option is given the strength of the stay
+constraint will be the weakest strength possible, which is 'OPTIONAL'.
 */
 func (s *Solver) AddStay(variable *Variable, options ...ConstraintOption) error {
 	if _, present := s.stays[variable]; present {
