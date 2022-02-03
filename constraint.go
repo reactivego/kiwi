@@ -40,10 +40,14 @@ func NewConstraint(expr Expression, op Operator, options ...ConstraintOption) *C
 	}
 	expr.Terms = expr.Terms[:len(expr.Terms)-collapsed]
 	cns := &Constraint{expr, op, REQUIRED}
-	for _, opt := range options {
-		opt(cns)
-	}
+	cns.ApplyOptions(options...)
 	return cns
+}
+
+func (c *Constraint) ApplyOptions(options ...ConstraintOption) {
+	for _, opt := range options {
+		opt(c)
+	}
 }
 
 func (c *Constraint) String() string {
