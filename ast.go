@@ -21,7 +21,7 @@ func ParseExpr(a ...interface{}) (*AST, error) {
 	return &AST{expr}, nil
 }
 
-func (a *AST) String() string {
+func (a AST) String() string {
 	var f strings.Builder
 	var walk func(expr ast.Expr)
 	walk = func(expr ast.Expr) {
@@ -50,7 +50,7 @@ func (a *AST) String() string {
 	return f.String()
 }
 
-func (a *AST) TechString() string {
+func (a AST) TechString() string {
 	const PAD = 8
 	var f strings.Builder
 	var walk func(expr ast.Expr, level int)
@@ -88,7 +88,7 @@ func (a *AST) TechString() string {
 	return f.String()
 }
 
-func (a *AST) NewConstraint(vars []*Variable, options ...ConstraintOption) (*Constraint, error) {
+func (a AST) NewConstraint(vars []*Variable, options ...ConstraintOption) (*Constraint, error) {
 	varmap := make(map[string]*Variable)
 	for _, v := range vars {
 		varmap[v.Name] = v
