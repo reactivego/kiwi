@@ -53,6 +53,18 @@ func (e DuplicateEditVariable) Error() string {
 	return fmt.Sprintf("Duplicate Edit Variable: %v", e.Variable)
 }
 
+type UnknownStayVariable struct{ *Variable }
+
+func (e UnknownStayVariable) Error() string {
+	return fmt.Sprintf("Unknown Stay Variable: %v", e.Variable)
+}
+
+type DuplicateStayVariable struct{ *Variable }
+
+func (e DuplicateStayVariable) Error() string {
+	return fmt.Sprintf("Duplicate Stay Variable: %v", e.Variable)
+}
+
 type UnknownVariableName struct{ Name string }
 
 func (e UnknownVariableName) Error() string {

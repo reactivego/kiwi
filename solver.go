@@ -13,6 +13,7 @@ type Solver struct {
 	rows                map[*symbol]*row
 	vars                map[*Variable]*symbol
 	edits               map[*Variable]*edit
+	stays               map[*Variable]*Constraint
 	infeasibleRows      []*symbol
 	objective           *row
 	artificialObjective *row
@@ -24,6 +25,7 @@ func NewSolver() *Solver {
 		rows:      map[*symbol]*row{},
 		vars:      map[*Variable]*symbol{},
 		edits:     map[*Variable]*edit{},
+		stays:     map[*Variable]*Constraint{},
 		objective: newRow(),
 	}
 }
@@ -198,6 +200,62 @@ func (s *Solver) HasConstraint(constraint *Constraint) bool {
 }
 
 /*
+AddStay adds a constraint that says that a particular variable shouldn’t be
+modified unless it needs to be - that it should “stay” as is unless there is
+a reason not to.
+*/
+func (s *Solver) AddStay(variable *Variable, options ...ConstraintOption) error {
+	if _, present := s.stays[variable]; present {
+		return DuplicateStayVariable{variable}
+	}
+	stay := &Constraint{Expression{[]Term{{variable, 1.0}}, -variable.Value}, EQ, OPTIONAL}
+	stay.ApplyOptions(options...)
+	if err := s.AddConstraint(stay); err != nil {
+		return err
+	}
+	s.stays[variable] = stay
+	return nil
+}
+
+/*
+RemoveStay removes a stay constraint for the given variable from the solver.
+*/
+func (s *Solver) RemoveStay(variable *Variable) error {
+	stay, present := s.stays[variable]
+	if !present {
+		return UnknownStayVariable{variable}
+	}
+	delete(s.stays, variable)
+	return s.RemoveConstraint(stay)
+}
+
+/*
+HasStay tests whether a stay constraint has been added to the solver
+for the given variable.
+*/
+func (s *Solver) HasStay(variable *Variable) bool {
+	_, present := s.stays[variable]
+	return present
+}
+
+/*
+uUdateStays updates all stay constraints to match the value their
+associated variable currently holds.
+
+This is automatically called by RemoveEditVariable to commit the
+changes caused by the editing of the variable.
+*/
+func (s *Solver) UpdateStays() {
+	for v, c := range s.stays {
+		if !NearZero(v.Value + c.Expression.Constant) {
+			s.RemoveConstraint(c)
+			c.Expression.Constant = -v.Value
+			s.AddConstraint(c)
+		}
+	}
+}
+
+/*
 AddEditVariable adds an edit variable to the solver.
 
 This method should be called before the `suggestValue` method is
@@ -241,9 +299,9 @@ func (s *Solver) RemoveEditVariable(variable *Variable) error {
 	if !present {
 		return UnknownEditVariable{variable}
 	}
-	s.RemoveConstraint(edit.constraint)
+	s.UpdateStays()
 	delete(s.edits, variable)
-	return nil
+	return s.RemoveConstraint(edit.constraint)
 }
 
 /*
@@ -332,6 +390,9 @@ func (s *Solver) Reset() {
 	}
 	for k := range s.edits {
 		delete(s.edits, k)
+	}
+	for k := range s.stays {
+		delete(s.stays, k)
 	}
 	s.infeasibleRows = nil
 	s.objective = newRow()
@@ -591,6 +652,12 @@ func (s Solver) String() string {
 	fmt.Fprintln(&sb, "--------------")
 	for e := range s.edits {
 		fmt.Fprintln(&sb, e)
+	}
+	fmt.Fprintln(&sb)
+	fmt.Fprintln(&sb, "Stay Constraints")
+	fmt.Fprintln(&sb, "----------------")
+	for v, c := range s.stays {
+		fmt.Fprintln(&sb, v, " == ", -c.Expression.Constant)
 	}
 	fmt.Fprintln(&sb)
 	fmt.Fprintln(&sb, "Constraints")
