@@ -96,5 +96,8 @@ func (t Term) GreaterThanOrEqualsExpression(expression Expression) *Constraint {
 }
 
 func (t Term) String() string {
+	if t.Coefficient == 1.0 {
+		return t.Variable.String()
+	}
 	return strconv.FormatFloat(t.Coefficient, 'f', -1, 64) + " * " + t.Variable.String()
 }
