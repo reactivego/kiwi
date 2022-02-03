@@ -21,6 +21,18 @@ func ParseExpr(a ...interface{}) (*AST, error) {
 	return &AST{expr}, nil
 }
 
+func ParseConstraint(x string, vars []*Variable, options ...ConstraintOption) (*Constraint, error) {
+	expr, err := ParseExpr(x)
+	if err != nil {
+		return nil, err
+	}
+	cnst, err := expr.NewConstraint(vars, options...)
+	if err != nil {
+		return nil, err
+	}
+	return cnst, nil
+}
+
 func (a AST) String() string {
 	var f strings.Builder
 	var walk func(expr ast.Expr)
