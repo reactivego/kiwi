@@ -30,7 +30,7 @@ func TestParser(t *testing.T) {
 
 	// Generate a new constraint from the ast while checking for evaluation errors
 	xm, xr, xl := Var("xm"), Var("xr"), Var("xl")
-	vars := Vars(xm, xr, xl)
+	vars := []*Variable{xm, xr, xl}
 
 	expr, err = ParseExpr("xm == 2 + 5 + 0.5 * (xr + xl) / (2 * 2)")
 	assert.Equal(t, nil, err, "err")

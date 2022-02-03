@@ -13,8 +13,12 @@ func Var(n string, v ...float64) *Variable {
 	return &Variable{n, append(v, 0.0)[0]}
 }
 
-func Vars(v ...*Variable) []*Variable {
-	return v
+func Vars(names ...string) []*Variable {
+	vars := make([]*Variable, len(names))
+	for i, name := range names {
+		vars[i] = &Variable{Name: name}
+	}
+	return vars
 }
 
 func NewVariable(name string) *Variable {
