@@ -264,6 +264,9 @@ AddEditVariable adds an edit variable to the solver.
 This method should be called before the `suggestValue` method is
 used to supply a suggested value for the given edit variable.
 
+When no strength option is given the edit variable will be
+created with STRONG strength.
+
 Returns
 
 	DuplicateEditVariable
@@ -272,6 +275,9 @@ The given edit variable has already been added to the solver.
 The given strength is >= required.
 */
 func (s *Solver) AddEditVariable(variable *Variable, options ...ConstraintOption) error {
+	if len(options) == 0 {
+		options = []ConstraintOption{WithStrength(STRONG)}
+	}
 	if _, present := s.edits[variable]; present {
 		return DuplicateEditVariable{variable}
 	}
