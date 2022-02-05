@@ -309,7 +309,7 @@ func TestManagingEditVariable(t *testing.T) {
 
 	assert.Equal(t, false, s.HasEditVariable(foo), "s.HasEditVariable(foo)")
 
-	err = s.AddEditVariable(foo)
+	err = s.AddEditVariable(foo, WithStrength(REQUIRED))
 	assert.Equal(t, BadRequiredStrength, err, "err")
 
 	err = s.AddEditVariable(bar, WithStrength(STRONG))
