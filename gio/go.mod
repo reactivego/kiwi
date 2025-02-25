@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	gioui.org v0.1.0
-	github.com/reactivego/kiwi v0.0.2
+	github.com/reactivego/kiwi v0.0.3
 	golang.org/x/exp/shiny v0.0.0-20230725093048-515e97ebf090
 )
 
