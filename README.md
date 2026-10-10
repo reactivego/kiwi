@@ -26,7 +26,7 @@ expression using `go/parser`.
 
 ## Where it sits
 
-Outside ADR-001's tier table — a support library, not a layer of the stack. The
+Outside the tier table — a support library, not a layer of the stack. The
 [organization page](https://github.com/vibrantgio) has the full tier table.
 
 It is also, with [csg](https://github.com/vibrantgio/csg), one of the two
